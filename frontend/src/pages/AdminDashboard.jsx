@@ -2,7 +2,10 @@
 import { useState, useEffect } from "react";
 
 // Axios for API calls
-import axios from "axios";
+import API from "../services/api";
+
+API.get("/products")
+API.post("/products/add");
 
 function AdminDashboard() {
 
@@ -16,7 +19,7 @@ function AdminDashboard() {
   const [stock,setStock] = useState("");
   const [image,setImage] = useState("");
   const [editingId,setEditingId] = useState(null); // to track which router is being edited
-
+  const [category,setCategory] = useState("");
   // ------------------------------
   // PRODUCT LIST STATE
   // stores routers fetched from DB
@@ -51,46 +54,50 @@ function AdminDashboard() {
 
   const addProduct = async () => {
 
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    try {
+  const formData = new FormData();
 
-      await axios.post(
-        "http://localhost:5000/api/products/add",
+  formData.append("name", name);
+  formData.append("category", category);
+  formData.append("description", description);
+  formData.append("price", price);
+  formData.append("stock", stock);
+  formData.append("image", image);
 
-        // product data
-        { name, description, price, stock, image },
+  try {
 
-        // auth header
-        {
-          headers:{
-            Authorization:`Bearer ${token}`
-          }
+    await axios.post(
+      "http://localhost:5000/api/products/add",
+      formData,
+      {
+        headers:{
+          Authorization:`Bearer ${token}`,
+          "Content-Type":"multipart/form-data"
         }
-      );
+      }
+    );
 
-      alert("Router added successfully");
+    alert("Router added successfully");
 
-      // refresh router list
-      fetchProducts();
+    fetchProducts();
 
-      // reset form fields
-    setEditingId(null);
+    // reset form
     setName("");
     setDescription("");
     setPrice("");
     setStock("");
-    setImage("");
+    setImage(null);
 
-    } catch(err){
+  } catch(err){
 
-      console.log(err.response?.data);
+    console.log(err.response?.data);
 
-      alert("Error adding router");
+    alert("Error adding router");
 
-    }
+  }
 
-  };
+};
 
   // ------------------------------
   // DELETE ROUTER FUNCTION
@@ -198,6 +205,22 @@ if(!token){
 
       <br/><br/>
 
+      <select
+  value={category}
+  onChange={(e)=>setCategory(e.target.value)}
+>
+
+<option value="">Select Category</option>
+<option value="Router">Router</option>
+<option value="Fiber Cable">Fiber Cable</option>
+<option value="Fiber Accessories">Fiber Accessories</option>
+<option value="Fiber Tools">Fiber Tools</option>
+<option value="Security">Security</option>
+<option value="Streaming Device">Streaming Device</option>
+
+</select>
+<br></br>
+
       <input
         value={description}
         placeholder="Description"
@@ -223,10 +246,9 @@ if(!token){
       <br/><br/>
 
       <input
-        value={image}
-        placeholder="Image URL"
-        onChange={(e)=>setImage(e.target.value)}
-      />
+  type="file"
+  onChange={(e)=>setImage(e.target.files[0])}
+/>
 
       <br/><br/>
 

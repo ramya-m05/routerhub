@@ -1,21 +1,28 @@
 const Product = require("../models/Product");
 
 // Add product (admin)
-exports.addProduct = async (req, res) => {
+exports.addProduct = async (req,res)=>{
 
-    try {
+  try{
 
-        const product = new Product(req.body);
+    const product = new Product({
+      name:req.body.name,
+      category:req.body.category,
+      description:req.body.description,
+      price:req.body.price,
+      stock:req.body.stock,
+      image:req.file.path
+    });
 
-        await product.save();
+    await product.save();
 
-        res.status(201).json(product);
+    res.json(product);
 
-    } catch (error) {
+  }catch(err){
 
-        res.status(500).json({ message: error.message });
+    res.status(500).json({message:err.message});
 
-    }
+  }
 
 };
 
@@ -35,6 +42,8 @@ exports.getProducts = async (req, res) => {
     }
 
 };
+
+router.get("/:id", getProductById);
 
 // Delete product (admin)
 exports.deleteProduct = async (req,res)=>{
