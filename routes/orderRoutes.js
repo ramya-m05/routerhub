@@ -1,59 +1,26 @@
-const Order = require("../models/Order");
+const express = require("express");
+const router = express.Router();
 
-// CREATE ORDER
-const createOrder = async (req, res) => {
-  try {
-    const order = new Order({
-      ...req.body,
-      userId: req.user.id
-    });
-
-    const saved = await order.save();
-    res.status(201).json(saved);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-};
-
-// GET USER ORDERS
-const getUserOrders = async (req, res) => {
-  try {
-    const orders = await Order.find({ userId: req.user.id });
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-};
-
-// GET ALL ORDERS (ADMIN)
-const getAllOrders = async (req, res) => {
-  try {
-    const orders = await Order.find();
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-};
-
-// UPDATE ORDER STATUS
-const updateOrderStatus = async (req, res) => {
-  try {
-    const updated = await Order.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true }
-    );
-
-    res.json(updated);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-};
-
-// ✅ CRITICAL EXPORT
-module.exports = {
+const {
   createOrder,
   getUserOrders,
   getAllOrders,
   updateOrderStatus
-};
+} = require("../controllers/orderController");
+
+const { verifyToken } = require("../middleware/authMiddleware");
+const { isAdmin } = require("../middleware/adminMiddleware");
+
+// CREATE ORDER
+router.post("/create", verifyToken, createOrder);
+
+// USER ORDERS
+router.get("/my", verifyToken, getUserOrders);
+
+// ADMIN - ALL ORDERS
+router.get("/", verifyToken, isAdmin, getAllOrders);
+
+// UPDATE STATUS
+router.put("/:id", verifyToken, isAdmin, updateOrderStatus);
+
+module.exports = router;

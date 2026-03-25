@@ -1,6 +1,6 @@
-const multer = require('multer');
-const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const multer = require("multer");
+const cloudinary = require("cloudinary").v2;
+const CloudinaryStorage = require("multer-storage-cloudinary");
 
 cloudinary.config({
   cloud_name: process.env.CLOUD_NAME,
@@ -9,11 +9,9 @@ cloudinary.config({
 });
 
 const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'routerhub',
-    allowed_formats: ['jpg', 'png', 'jpeg'],
-  },
+  cloudinary: cloudinary,
+  folder: "routerhub",
+  allowedFormats: ["jpg", "png", "jpeg"],
 });
 
 module.exports = multer({ storage });

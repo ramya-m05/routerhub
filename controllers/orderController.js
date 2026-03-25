@@ -1,8 +1,13 @@
-const Order = require('../models/Order');
+const Order = require("../models/Order");
 
+// CREATE ORDER
 const createOrder = async (req, res) => {
   try {
-    const order = new Order(req.body);
+    const order = new Order({
+      ...req.body,
+      userId: req.user.id
+    });
+
     const saved = await order.save();
     res.status(201).json(saved);
   } catch (err) {
@@ -10,6 +15,17 @@ const createOrder = async (req, res) => {
   }
 };
 
+// GET USER ORDERS
+const getUserOrders = async (req, res) => {
+  try {
+    const orders = await Order.find({ userId: req.user.id });
+    res.json(orders);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+};
+
+// GET ALL ORDERS (ADMIN)
 const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find();
@@ -19,6 +35,7 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+// UPDATE ORDER STATUS
 const updateOrderStatus = async (req, res) => {
   try {
     const updated = await Order.findByIdAndUpdate(
@@ -26,6 +43,7 @@ const updateOrderStatus = async (req, res) => {
       { status: req.body.status },
       { new: true }
     );
+
     res.json(updated);
   } catch (err) {
     res.status(500).json(err);
@@ -34,6 +52,7 @@ const updateOrderStatus = async (req, res) => {
 
 module.exports = {
   createOrder,
+  getUserOrders,
   getAllOrders,
-  updateOrderStatus,
+  updateOrderStatus
 };

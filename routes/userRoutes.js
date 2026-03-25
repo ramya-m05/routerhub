@@ -1,15 +1,26 @@
 const express = require("express");
 const router = express.Router();
 
+const {
+  getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser
+} = require("../controllers/userController");
+
 const { verifyToken } = require("../middleware/authMiddleware");
-const User = require("../models/User");
+const { isAdmin } = require("../middleware/adminMiddleware");
 
-router.get("/profile", verifyToken, async (req,res)=>{
+// GET ALL USERS (ADMIN ONLY)
+router.get("/", verifyToken, isAdmin, getAllUsers);
 
-  const user = await User.findById(req.user.id).select("-password");
+// GET SINGLE USER
+router.get("/:id", verifyToken, getUserById);
 
-  res.json(user);
+// UPDATE USER
+router.put("/:id", verifyToken, updateUser);
 
-});
+// DELETE USER (ADMIN ONLY)
+router.delete("/:id", verifyToken, isAdmin, deleteUser);
 
 module.exports = router;

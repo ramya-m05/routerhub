@@ -3,11 +3,11 @@ const router = express.Router();
 
 const upload = require("../middleware/upload");
 
-// Example product route
-router.post("/upload", upload.single("image"), (req, res) => {
+// Upload route
+router.post("/", upload.single("image"), (req, res) => {
   try {
     res.json({
-      message: "Image uploaded successfully",
+      message: "File uploaded",
       file: req.file
     });
   } catch (err) {
