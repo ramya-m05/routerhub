@@ -1,6 +1,8 @@
 // React hooks
 import { useState, useEffect } from "react";
 
+import axios from "axios";
+
 // Axios for API calls
 import API from "../services/api";
 
@@ -35,7 +37,7 @@ function AdminDashboard() {
   const fetchProducts = async () => {
 
     const res = await axios.get(
-      "http://localhost:5000/api/products"
+      "${import.meta.env.VITE_API_URL}/api/products"
     );
 
     setProducts(res.data);
@@ -51,7 +53,6 @@ function AdminDashboard() {
   // ADD ROUTER FUNCTION
   // sends POST request to backend
   // ------------------------------
-
   const addProduct = async () => {
 
   const token = localStorage.getItem("token");
@@ -63,12 +64,12 @@ function AdminDashboard() {
   formData.append("description", description);
   formData.append("price", price);
   formData.append("stock", stock);
-  formData.append("image", image);
+  formData.append("image", image); // FILE
 
   try {
 
     await axios.post(
-      "http://localhost:5000/api/products/add",
+      "${import.meta.env.VITE_API_URL}/api/products/add",
       formData,
       {
         headers:{
@@ -80,24 +81,16 @@ function AdminDashboard() {
 
     alert("Router added successfully");
 
-    fetchProducts();
-
-    // reset form
-    setName("");
-    setDescription("");
-    setPrice("");
-    setStock("");
-    setImage(null);
-
   } catch(err){
 
     console.log(err.response?.data);
-
     alert("Error adding router");
 
   }
 
 };
+  
+    
 
   // ------------------------------
   // DELETE ROUTER FUNCTION
@@ -110,7 +103,7 @@ function AdminDashboard() {
     try{
 
       await axios.delete(
-        `http://localhost:5000/api/products/${id}`,
+        `${import.meta.env.VITE_API_URL}/api/products/${id}`,
         {
           headers:{
             Authorization:`Bearer ${token}`
@@ -141,7 +134,7 @@ function AdminDashboard() {
   try{
 
     await axios.put(
-      `http://localhost:5000/api/products/${id}`,
+      `${import.meta.env.VITE_API_URL}/api/products/${id}`,
       { name, description, price, stock, image },
       {
         headers:{
@@ -199,7 +192,7 @@ if(!token){
 
       <input
         value={name}
-        placeholder="Router Name"
+        placeholder="Product Name"
         onChange={(e)=>setName(e.target.value)}
       />
 

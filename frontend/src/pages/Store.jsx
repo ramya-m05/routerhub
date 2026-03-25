@@ -1,20 +1,21 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
-import { Link } from "react-router-dom";
+import { useEffect, useState, useContext } from "react";
+import API from "../services/api";
 import Navbar from "../components/Navbar";
+import { CartContext } from "../context/CartContext";
+import { WishlistContext } from "../context/WishlistContext";
+import { useLocation } from "react-router-dom";
 
 function Store(){
 
-  // products from database
+  const { cart, addToCart, increaseQty, decreaseQty } = useContext(CartContext);
+  const { wishlist, addToWishlist, removeFromWishlist } = useContext(WishlistContext);
+
   const [products,setProducts] = useState([]);
-
-  // category filter
   const [selectedCategory,setSelectedCategory] = useState("All");
-
-  // search filter
   const [search,setSearch] = useState("");
 
-  // categories list
+  const location = useLocation();
+
   const categories = [
     "All",
     "Router",
@@ -25,117 +26,182 @@ function Store(){
     "Streaming Device"
   ];
 
-  // fetch products
-  const fetchProducts = async () => {
-
-    const res = await axios.get(
-      "http://localhost:5000/api/products"
-    );
-
-    setProducts(res.data);
-
+  // FETCH PRODUCTS
+  const fetchProducts = async ()=>{
+    try{
+      const res = await API.get("/products");
+      setProducts(res.data);
+    }catch(err){
+      console.log(err);
+    }
   };
 
   useEffect(()=>{
     fetchProducts();
   },[]);
 
-  // filter products
-  const filteredProducts =
-    products
-      .filter(p =>
-        selectedCategory === "All"
+  // URL CATEGORY SUPPORT
+  useEffect(()=>{
+    const params = new URLSearchParams(location.search);
+    const cat = params.get("category");
+
+    if(cat){
+      setSelectedCategory(cat);
+    }else{
+      setSelectedCategory("All");
+    }
+  },[location]);
+
+  // FILTER
+  const filteredProducts = products
+    .filter(p =>
+      selectedCategory === "All"
         ? true
         : p.category === selectedCategory
-      )
-      .filter(p =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-      );
+    )
+    .filter(p =>
+      p.name.toLowerCase().includes(search.toLowerCase())
+    );
 
   return(
 
     <div>
 
-      {/* Navbar */}
       <Navbar setSearch={setSearch}/>
 
-      <div style={{padding:"40px"}}>
+      <div style={{padding:"30px"}}>
 
-        <h1>RouterHub Store</h1>
+        <h2>Store</h2>
 
-        {/* Category Buttons */}
+        {/* CATEGORY */}
         <div style={{marginBottom:"20px"}}>
-
-          {categories.map((cat)=>(
+          {categories.map(cat=>(
             <button
               key={cat}
               onClick={()=>setSelectedCategory(cat)}
               style={{
                 marginRight:"10px",
                 padding:"8px 12px",
-                background:
-                  selectedCategory === cat ? "#333" : "#eee",
-                color:
-                  selectedCategory === cat ? "white" : "black",
+                borderRadius:"20px",
                 border:"none",
-                borderRadius:"4px",
+                background: selectedCategory === cat ? "#ff6a00" : "#eee",
+                color: selectedCategory === cat ? "white" : "black",
                 cursor:"pointer"
               }}
             >
               {cat}
             </button>
           ))}
-
         </div>
 
-        {/* Product Grid */}
-        <div
-          style={{
-            display:"flex",
-            flexWrap:"wrap",
-            gap:"20px"
-          }}
-        >
+        {/* GRID */}
+        <div style={{
+          display:"flex",
+          flexWrap:"wrap",
+          gap:"20px"
+        }}>
 
-        {filteredProducts.map((p)=>(
+          {filteredProducts.map(p=>{
 
-          <Link
-            key={p._id}
-            to={`/product/${p._id}`}
-            style={{textDecoration:"none",color:"black"}}
-          >
+            const cartItem = cart.find(i => i._id === p._id);
+            const wishItem = wishlist.find(i => i._id === p._id);
 
-            <div
-              style={{
-                border:"1px solid #ddd",
-                borderRadius:"8px",
-                width:"250px",
-                padding:"15px",
-                boxShadow:"0 2px 5px rgba(0,0,0,0.1)"
-              }}
-            >
+            return(
 
-              <img
-                src={p.image}
-                alt={p.name}
+              <div
+                key={p._id}
                 style={{
-                  width:"100%",
-                  height:"150px",
-                  objectFit:"cover"
+                  width:"220px",
+                  background:"white",
+                  borderRadius:"12px",
+                  padding:"15px",
+                  boxShadow:"0 10px 20px rgba(0,0,0,0.08)",
+                  transition:"0.3s",
+                  position:"relative"
                 }}
-              />
+              >
 
-              <h3>{p.name}</h3>
+                {/* ❤️ WISHLIST */}
+                <span
+                  onClick={()=> wishItem ? removeFromWishlist(p._id) : addToWishlist(p)}
+                  style={{
+                    position:"absolute",
+                    right:"10px",
+                    top:"10px",
+                    cursor:"pointer",
+                    fontSize:"18px"
+                  }}
+                >
+                  {wishItem ? "❤️" : "🤍"}
+                </span>
 
-              <p>{p.category}</p>
+                {/* IMAGE */}
+                <img
+                  src={p.image}
+                  style={{
+                    width:"100%",
+                    height:"140px",
+                    objectFit:"cover",
+                    borderRadius:"10px"
+                  }}
+                />
 
-              <p>₹{p.price}</p>
+                {/* DETAILS */}
+                <h4 style={{marginTop:"10px"}}>{p.name}</h4>
 
-            </div>
+                <p style={{color:"gray", fontSize:"14px"}}>
+                  {p.category}
+                </p>
 
-          </Link>
+                <h3 style={{color:"#ff6a00"}}>
+                  ₹{p.price}
+                </h3>
 
-        ))}
+                {/* CART SECTION */}
+                {cartItem ? (
+
+                  <div style={{
+                    display:"flex",
+                    justifyContent:"space-between",
+                    marginTop:"10px",
+                    border:"2px solid #ff6a00",
+                    borderRadius:"20px",
+                    padding:"5px"
+                  }}>
+
+                    <button onClick={()=>decreaseQty(p._id)}>-</button>
+
+                    <span>{cartItem.qty}</span>
+
+                    <button onClick={()=>increaseQty(p._id)}>+</button>
+
+                  </div>
+
+                ) : (
+
+                  <button
+                    onClick={()=>addToCart(p)}
+                    style={{
+                      width:"100%",
+                      marginTop:"10px",
+                      background:"#ff6a00",
+                      color:"white",
+                      border:"none",
+                      padding:"8px",
+                      borderRadius:"8px",
+                      cursor:"pointer"
+                    }}
+                  >
+                    Add to Cart
+                  </button>
+
+                )}
+
+              </div>
+
+            );
+
+          })}
 
         </div>
 

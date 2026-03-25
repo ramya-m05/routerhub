@@ -1,14 +1,15 @@
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { CartContext } from "../context/CartContext";
+import { WishlistContext } from "../context/WishlistContext";
 
-function Navbar({setSearch}){
+function Navbar({ setSearch }){
 
-  const [value,setValue] = useState("");
+  const { cart } = useContext(CartContext);
+  const { wishlist } = useContext(WishlistContext);
 
-  const handleSearch = (e)=>{
-    setValue(e.target.value);
-    setSearch(e.target.value);
-  };
+  const [open,setOpen] = useState(false);
+  const navigate = useNavigate();
 
   return(
 
@@ -16,41 +17,70 @@ function Navbar({setSearch}){
       display:"flex",
       justifyContent:"space-between",
       alignItems:"center",
-      padding:"15px",
-      background:"#333",
-      color:"white"
+      padding:"15px 30px",
+      background:"white",
+      boxShadow:"0 4px 15px rgba(0,0,0,0.08)"
     }}>
 
-      <h2>RouterHub</h2>
+      <h2 style={{color:"#ff6a00", cursor:"pointer"}}
+        onClick={()=>navigate("/store")}
+      >
+        ROUTERHUB
+      </h2>
 
       <input
-        placeholder="Search products..."
-        value={value}
-        onChange={handleSearch}
+        placeholder="Search..."
+        onChange={(e)=>setSearch(e.target.value)}
         style={{
-          padding:"8px",
-          width:"250px",
-          borderRadius:"4px",
-          border:"none"
+          padding:"10px",
+          width:"350px",
+          borderRadius:"25px",
+          border:"1px solid #ddd"
         }}
       />
 
-      <div>
+      <div style={{display:"flex", gap:"20px", alignItems:"center"}}>
 
-        <Link to="/store" style={{color:"white",marginRight:"15px"}}>
-          Store
-        </Link>
+        {/* ❤️ Wishlist */}
+        <div style={{cursor:"pointer"}} onClick={()=>navigate("/wishlist")}>
+          ❤️ {wishlist.length}
+        </div>
 
-        <Link to="/" style={{color:"white"}}>
-          Admin
-        </Link>
+        {/* 🛒 Cart */}
+        <div style={{cursor:"pointer"}} onClick={()=>navigate("/cart")}>
+          🛒 {cart.length}
+        </div>
+
+        {/* 👤 Profile */}
+        <div style={{position:"relative"}}>
+          <span onClick={()=>setOpen(!open)} style={{cursor:"pointer"}}>👤</span>
+
+          {open && (
+            <div style={{
+              position:"absolute",
+              right:0,
+              top:"30px",
+              background:"white",
+              padding:"10px",
+              borderRadius:"8px",
+              boxShadow:"0 5px 15px rgba(0,0,0,0.2)"
+            }}>
+              <p onClick={()=>navigate("/profile")}>Profile</p>
+              <p onClick={()=>navigate("/orders")}>Orders</p>
+              <p onClick={()=>{
+                localStorage.clear();
+                navigate("/login");
+              }} style={{color:"red"}}>
+                Logout
+              </p>
+            </div>
+          )}
+        </div>
 
       </div>
 
     </div>
-
   );
-
 }
 
 export default Navbar;
