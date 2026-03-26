@@ -7,7 +7,7 @@ import axios from "axios";
 import API from "../services/api";
 
 API.get("/products")
-API.post("/products/add");
+API.post("/products",formData);
 
 function AdminDashboard() {
 
@@ -57,6 +57,7 @@ function AdminDashboard() {
 
   const token = localStorage.getItem("token");
 
+  const handleAddProduct = async () => {
   const formData = new FormData();
 
   formData.append("name", name);
@@ -64,12 +65,18 @@ function AdminDashboard() {
   formData.append("description", description);
   formData.append("price", price);
   formData.append("stock", stock);
-  formData.append("image", image); // FILE
+
+  if (image) {
+    formData.append("image", image);
+  }
+
+  await API.post("/products", formData);
+};
 
   try {
 
     await axios.post(
-      "${import.meta.env.VITE_API_URL}/api/products/add",
+      "${import.meta.env.VITE_API_URL}/api/products",
       formData,
       {
         headers:{
