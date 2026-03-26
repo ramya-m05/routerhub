@@ -3,16 +3,27 @@ const router = express.Router();
 
 const upload = require("../middleware/upload");
 
-// Example product route
-router.post("/upload", upload.single("image"), (req, res) => {
-  try {
-    res.json({
-      message: "Image uploaded successfully",
-      file: req.file
-    });
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
+const {
+  addProduct,
+  getProducts,
+  getProductById,
+  updateProduct,
+  deleteProduct
+} = require("../controllers/productController");
+
+// ✅ CREATE PRODUCT (with image)
+router.post("/", upload.single("image"), addProduct);
+
+// ✅ GET ALL PRODUCTS
+router.get("/", getProducts);
+
+// ✅ GET SINGLE PRODUCT
+router.get("/:id", getProductById);
+
+// ✅ UPDATE PRODUCT
+router.put("/:id", updateProduct);
+
+// ✅ DELETE PRODUCT
+router.delete("/:id", deleteProduct);
 
 module.exports = router;

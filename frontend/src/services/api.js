@@ -1,10 +1,9 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/api`  // ✅ backticks not quotes
+  baseURL: "https://routerhub-backend.onrender.com/api"
 });
 
-// Attach token automatically
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
