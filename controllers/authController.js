@@ -5,19 +5,20 @@ const bcrypt = require("bcryptjs");
 // REGISTER
 const registerUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
-
-    const hashed = await bcrypt.hash(password, 10);
+    const { name, email, password } = req.body;  // ✅ MUST MATCH
 
     const user = new User({
-      username,
-      password: hashed,
+      name,
+      email,
+      password
     });
 
     await user.save();
 
-    res.json({ message: "User registered" });
+    res.json({ message: "User registered successfully" });
+
   } catch (err) {
+    console.log(err);
     res.status(500).json(err);
   }
 };
