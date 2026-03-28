@@ -1,29 +1,13 @@
 const express = require("express");
 const router = express.Router();
 
-const upload = require("../middleware/upload");
-
-const {
-  addProduct,
-  getProducts,
-  getProductById,
-  updateProduct,
-  deleteProduct
-} = require("../controllers/productController");
-
-// ✅ CREATE PRODUCT (with image)
-router.post("/", upload.single("image"), addProduct);
-
-// ✅ GET ALL PRODUCTS
-router.get("/", getProducts);
-
-// ✅ GET SINGLE PRODUCT
-router.get("/:id", getProductById);
-
-// ✅ UPDATE PRODUCT
-router.put("/:id", updateProduct);
-
-// ✅ DELETE PRODUCT
-router.delete("/:id", deleteProduct);
+// GET all products
+router.get("/", async (req, res) => {
+  try {
+    res.json([{ name: "Test Product" }]); // temporary test
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 module.exports = router;

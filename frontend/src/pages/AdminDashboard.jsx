@@ -1,199 +1,109 @@
-// React hooks
 import { useState, useEffect } from "react";
-
-import axios from "axios";
-
-// Axios for API calls
 import API from "../services/api";
 
-API.get("/products")
-API.post("/products",formData);
-
 function AdminDashboard() {
-
-  // ------------------------------
-  // FORM STATE (for adding router)
-  // ------------------------------
 
   const [name,setName] = useState("");
   const [description,setDescription] = useState("");
   const [price,setPrice] = useState("");
   const [stock,setStock] = useState("");
-  const [image,setImage] = useState("");
-  const [editingId,setEditingId] = useState(null); // to track which router is being edited
+  const [image,setImage] = useState(null);
+  const [editingId,setEditingId] = useState(null);
   const [category,setCategory] = useState("");
-  // ------------------------------
-  // PRODUCT LIST STATE
-  // stores routers fetched from DB
-  // ------------------------------
-
   const [products,setProducts] = useState([]);
 
-  // ------------------------------
-  // FETCH PRODUCTS FROM BACKEND
-  // runs when page loads
-  // ------------------------------
-
+  // ✅ FETCH PRODUCTS
   const fetchProducts = async () => {
-
-    const res = await axios.get(
-      "${import.meta.env.VITE_API_URL}/api/products"
-    );
-
-    setProducts(res.data);
-
+    try {
+      const res = await API.get("/products");
+      setProducts(res.data);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  // React lifecycle hook
   useEffect(()=>{
     fetchProducts();
   },[]);
 
-  // ------------------------------
-  // ADD ROUTER FUNCTION
-  // sends POST request to backend
-  // ------------------------------
+  // ✅ ADD PRODUCT
   const addProduct = async () => {
 
-  const token = localStorage.getItem("token");
+    const formData = new FormData();
 
-  const handleAddProduct = async () => {
-  const formData = new FormData();
+    formData.append("name", name);
+    formData.append("category", category);
+    formData.append("description", description);
+    formData.append("price", price);
+    formData.append("stock", stock);
 
-  formData.append("name", name);
-  formData.append("category", category);
-  formData.append("description", description);
-  formData.append("price", price);
-  formData.append("stock", stock);
-
-  if (image) {
-    formData.append("image", image);
-  }
-
-  await API.post("/products", formData);
-};
-
-  try {
-
-    await axios.post(
-      "${import.meta.env.VITE_API_URL}/api/products",
-      formData,
-      {
-        headers:{
-          Authorization:`Bearer ${token}`,
-          "Content-Type":"multipart/form-data"
-        }
-      }
-    );
-
-    alert("Router added successfully");
-
-  } catch(err){
-
-    console.log(err.response?.data);
-    alert("Error adding router");
-
-  }
-
-};
-  
-    
-
-  // ------------------------------
-  // DELETE ROUTER FUNCTION
-  // ------------------------------
-
-  const deleteProduct = async (id) => {
-
-    const token = localStorage.getItem("token");
-
-    try{
-
-      await axios.delete(
-        `${import.meta.env.VITE_API_URL}/api/products/${id}`,
-        {
-          headers:{
-            Authorization:`Bearer ${token}`
-          }
-        }
-      );
-
-      alert("Router deleted");
-
-      fetchProducts();
-
-    }catch(err){
-
-      alert("Error deleting router");
-
+    if (image) {
+      formData.append("image", image);
     }
 
+    try {
+      await API.post("/products", formData);
+      alert("Product added");
+      fetchProducts();
+
+      // reset
+      setName("");
+      setCategory("");
+      setDescription("");
+      setPrice("");
+      setStock("");
+      setImage(null);
+
+    } catch (err) {
+      console.log(err);
+      alert("Error adding product");
+    }
   };
 
-  // ------------------------------
-  // UPDATE ROUTER FUNCTION
-  // ------------------------------
+  // ✅ DELETE
+  const deleteProduct = async (id) => {
+    try {
+      await API.delete(`/products/${id}`);
+      alert("Deleted");
+      fetchProducts();
+    } catch (err) {
+      alert("Error deleting");
+    }
+  };
 
- const updateProduct = async (id) => {
+  // ✅ UPDATE
+  const updateProduct = async (id) => {
+    try {
+      await API.put(`/products/${id}`, {
+        name, description, price, stock, category
+      });
 
+      alert("Updated");
+      fetchProducts();
+
+      setEditingId(null);
+      setName("");
+      setDescription("");
+      setPrice("");
+      setStock("");
+      setImage(null);
+
+    } catch (err) {
+      console.log(err);
+      alert("Error updating");
+    }
+  };
+
+  // ✅ AUTH CHECK
   const token = localStorage.getItem("token");
-
-  try{
-
-    await axios.put(
-      `${import.meta.env.VITE_API_URL}/api/products/${id}`,
-      { name, description, price, stock, image },
-      {
-        headers:{
-          Authorization:`Bearer ${token}`
-        }
-      }
-    );
-
-    alert("Router updated");
-
-    // refresh router list
-    fetchProducts();
-
-    // reset form fields
-    setEditingId(null);
-    setName("");
-    setDescription("");
-    setPrice("");
-    setStock("");
-    setImage("");
-
-  }catch(err){
-
-    console.log(err.response?.data);
-
-    alert("Error updating router");
-
+  if(!token){
+    window.location.href = "/";
   }
 
-
-
-};
-
-const token = localStorage.getItem("token");
-
-if(!token){
-  window.location.href = "/";
-}
-  // ------------------------------
-  // UI SECTION
-  // ------------------------------
-
   return (
-
     <div style={{padding:"30px"}}>
 
-      {/* PAGE TITLE */}
       <h2>RouterHub Admin Dashboard</h2>
-
-      {/* ------------------------------
-          ADD ROUTER FORM
-      --------------------------------*/}
 
       <h3>Add Router</h3>
 
@@ -205,21 +115,17 @@ if(!token){
 
       <br/><br/>
 
-      <select
-  value={category}
-  onChange={(e)=>setCategory(e.target.value)}
->
+      <select value={category} onChange={(e)=>setCategory(e.target.value)}>
+        <option value="">Select Category</option>
+        <option value="Router">Router</option>
+        <option value="Fiber Cable">Fiber Cable</option>
+        <option value="Fiber Accessories">Fiber Accessories</option>
+        <option value="Fiber Tools">Fiber Tools</option>
+        <option value="Security">Security</option>
+        <option value="Streaming Device">Streaming Device</option>
+      </select>
 
-<option value="">Select Category</option>
-<option value="Router">Router</option>
-<option value="Fiber Cable">Fiber Cable</option>
-<option value="Fiber Accessories">Fiber Accessories</option>
-<option value="Fiber Tools">Fiber Tools</option>
-<option value="Security">Security</option>
-<option value="Streaming Device">Streaming Device</option>
-
-</select>
-<br></br>
+      <br/><br/>
 
       <input
         value={description}
@@ -246,131 +152,76 @@ if(!token){
       <br/><br/>
 
       <input
-  type="file"
-  onChange={(e)=>setImage(e.target.files[0])}
-/>
+        type="file"
+        onChange={(e)=>setImage(e.target.files[0])}
+      />
 
       <br/><br/>
 
-      <button
-  onClick={()=>{
-    if(editingId){
-      updateProduct(editingId);
-    }else{
-      addProduct();
-    }
-  }}
->
-{editingId ? "Update Router" : "Add Router"}
-</button>
-
-      {/* ------------------------------
-          PRODUCT LIST SECTION
-      --------------------------------*/}
+      <button onClick={()=>{
+        if(editingId){
+          updateProduct(editingId);
+        } else {
+          addProduct();
+        }
+      }}>
+        {editingId ? "Update Router" : "Add Router"}
+      </button>
 
       <h3>All Routers</h3>
 
-      {/* grid container */}
       <div style={{display:"flex",flexWrap:"wrap"}}>
 
-      {/* LOOP START */}
-      {products.map((p)=>(
-
-        <div
-          key={p._id}
-          style={{
+        {products.map((p)=>(
+          <div key={p._id} style={{
             border:"1px solid #ddd",
             borderRadius:"8px",
             padding:"15px",
             margin:"15px",
-            width:"250px",
-            boxShadow:"0px 2px 5px rgba(0,0,0,0.1)"
-          }}
-        >
+            width:"250px"
+          }}>
 
-          {/* router image */}
-          <img
-            src={p.image}
-            alt={p.name}
-            style={{width:"100%",height:"150px",objectFit:"cover"}}
-          />
+            <img
+              src={p.image}
+              alt={p.name}
+              style={{width:"100%",height:"150px",objectFit:"cover"}}
+            />
 
-          {/* router details */}
-          <h3>{p.name}</h3>
+            <h3>{p.name}</h3>
+            <p>{p.description}</p>
+            <p>₹{p.price}</p>
+            <p>Stock: {p.stock}</p>
 
-          <p>{p.description}</p>
-
-          <p><b>Price:</b> ₹{p.price}</p>
-
-          <p><b>Stock:</b> {p.stock}</p>
-
-          {/* action buttons */}
-          <div style={{display:"flex",gap:"10px",marginTop:"10px",justifyContent:"center"}}>
-
-            <button
-              onClick={()=>{
-    setName(p.name);
-    setDescription(p.description);
-    setPrice(p.price);
-    setStock(p.stock);
-    setImage(p.image);
-    setEditingId(p._id);
-  }}
-              style={{
-                background:"blue",
-                color:"white",
-                border:"none",
-                padding:"6px 10px",
-                borderRadius:"4px"
-              }}
-            >
+            <button onClick={()=>{
+              setName(p.name);
+              setDescription(p.description);
+              setPrice(p.price);
+              setStock(p.stock);
+              setCategory(p.category);
+              setEditingId(p._id);
+            }}>
               Edit
             </button>
 
-            <button
-              onClick={()=>deleteProduct(p._id)}
-              style={{
-                background:"red",
-                color:"white",
-                border:"none",
-                padding:"6px 10px",
-                borderRadius:"4px"
-              }}
-            >
+            <button onClick={()=>deleteProduct(p._id)}>
               Delete
             </button>
 
-            <button
-  onClick={()=>{
-    localStorage.removeItem("token");
-    window.location.href="/";
-  }}
-  style={{
-    position:"absolute",
-    right:"20px",
-    top:"20px",
-    background:"red",
-    color:"white",
-    border:"none",
-    padding:"8px 12px",
-    borderRadius:"4px"
-  }}
->
-Logout
-</button>
-
           </div>
-
-        </div>
-
-      ))}
-
-      {/* LOOP END */}
+        ))}
 
       </div>
 
-    </div>
+      <button
+        onClick={()=>{
+          localStorage.removeItem("token");
+          window.location.href="/";
+        }}
+      >
+        Logout
+      </button>
 
+    </div>
   );
 }
 
