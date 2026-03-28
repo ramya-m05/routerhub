@@ -5,12 +5,14 @@ const bcrypt = require("bcryptjs");
 // REGISTER
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password } = req.body;  // ✅ MUST MATCH
+    const { name, email, password } = req.body;
+
+    const hashedPassword = await bcrypt.hash(password, 10);  // ✅ FIX
 
     const user = new User({
       name,
       email,
-      password
+      password: hashedPassword   // ✅ FIX
     });
 
     await user.save();
@@ -26,9 +28,9 @@ const registerUser = async (req, res) => {
 // LOGIN
 const loginUser = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;   // ✅ FIXED
 
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ email });  // ✅ FIXED
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
@@ -41,6 +43,7 @@ const loginUser = async (req, res) => {
     );
 
     res.json({ token });
+
   } catch (err) {
     res.status(500).json(err);
   }
