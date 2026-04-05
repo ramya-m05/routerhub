@@ -1,25 +1,37 @@
 const express = require("express");
 const router = express.Router();
 
-// ✅ GET products
-router.get("/", async (req, res) => {
-  res.json([{ name: "Test Product" }]);
-});
+const {
+  getProducts,
+  getProduct,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  getReviews,
+  addReview
+} = require("../controllers/productController");
 
-// ✅ ADD PRODUCT (THIS IS MISSING)
-router.post("/", async (req, res) => {
-  try {
-    const { name, price } = req.body;
+// ✅ FIXED IMPORTS
+const { verifyToken } = require("../middleware/authMiddleware");
+const { isAdmin } = require("../middleware/adminMiddleware");
 
-    res.json({
-      message: "Product added",
-      name,
-      price
-    });
+const upload = require("../middleware/upload");
 
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+
+// PUBLIC
+router.get("/", getProducts);
+
+// ✅ REVIEWS FIRST
+router.get("/:id/reviews", getReviews);
+router.post("/:id/reviews", verifyToken, addReview);
+
+// PRODUCT
+router.get("/:id", getProduct);
+
+// ADMIN
+router.post("/", verifyToken, isAdmin, upload.single("image"), createProduct);
+router.put("/:id", verifyToken, isAdmin, upload.single("image"), updateProduct);
+router.delete("/:id", verifyToken, isAdmin, deleteProduct);
+
 
 module.exports = router;

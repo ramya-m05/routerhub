@@ -5,22 +5,19 @@ const {
   createOrder,
   getUserOrders,
   getAllOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  getOrder
 } = require("../controllers/orderController");
 
+// ✅ FIXED IMPORTS
 const { verifyToken } = require("../middleware/authMiddleware");
 const { isAdmin } = require("../middleware/adminMiddleware");
 
-// CREATE ORDER
-router.post("/create", verifyToken, createOrder);
-
-// USER ORDERS
+// ROUTES
+router.post("/", verifyToken, createOrder);
 router.get("/my", verifyToken, getUserOrders);
-
-// ADMIN - ALL ORDERS
 router.get("/", verifyToken, isAdmin, getAllOrders);
-
-// UPDATE STATUS
+router.get("/:id", verifyToken, getOrder);
 router.put("/:id", verifyToken, isAdmin, updateOrderStatus);
 
 module.exports = router;

@@ -1,98 +1,94 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useIsMobile } from "../hooks/useIsMobile";
 
-function HeroSlider(){
+const slides = [
+  { tag: "Limited Time Deal", title: "Buy More,\nSave More", subtitle: "Up to ₹1000 OFF on selected routers", cta: "Shop Now", link: "/store?category=Router", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80" },
+  { tag: "New Arrivals", title: "Upgrade Your\nNetwork", subtitle: "Latest routers & fiber tools in stock", cta: "Explore", link: "/store", image: "https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=600&q=80" },
+  { tag: "Security", title: "Protect What\nMatters", subtitle: "IP cameras, NVRs & complete security kits", cta: "View Security", link: "/store?category=Security", image: "https://images.unsplash.com/photo-1557597774-9d273605dfa9?w=600&q=80" },
+];
 
-  const slides = [
-    {
-      title:"Networking Products",
-      subtitle:"Fast Delivery",
-      image:"https://cdn-icons-png.flaticon.com/512/1055/1055687.png"
-    },
-    {
-      title:"Fiber Equipment",
-      subtitle:"Best Quality",
-      image:"https://cdn-icons-png.flaticon.com/512/2920/2920277.png"
-    },
-    {
-      title:"Security Devices",
-      subtitle:"Stay Safe",
-      image:"https://cdn-icons-png.flaticon.com/512/3064/3064197.png"
-    }
-  ];
+function HeroSlider() {
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [index, setIndex] = useState(0);
+  const [animating, setAnimating] = useState(false);
 
-  const [current,setCurrent] = useState(0);
-
-  // auto slide
-  useEffect(()=>{
-    const interval = setInterval(()=>{
-      setCurrent((prev)=>(prev + 1) % slides.length);
-    },3000);
-
-    return ()=>clearInterval(interval);
-  },[]);
-
-  const prevSlide = ()=>{
-    setCurrent(current === 0 ? slides.length - 1 : current - 1);
+  const goTo = (i) => {
+    if (animating || i === index) return;
+    setAnimating(true);
+    setIndex(i);
+    setTimeout(() => setAnimating(false), 300);
   };
 
-  const nextSlide = ()=>{
-    setCurrent((current + 1) % slides.length);
-  };
+  useEffect(() => {
+    const t = setInterval(() => goTo((index + 1) % slides.length), 4500);
+    return () => clearInterval(t);
+  }, [index]);
 
-  return(
+  const s = slides[index];
 
-    <div className="relative bg-white rounded-lg shadow p-10 flex items-center justify-between">
+  return (
+    <div style={{ padding: isMobile ? "12px 16px" : "20px 40px", fontFamily: "'DM Sans', sans-serif" }}>
+      <div style={{
+        height: isMobile ? "260px" : "380px",
+        borderRadius: isMobile ? "14px" : "20px",
+        background: "#111",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: isMobile ? "24px 24px" : "0 60px",
+        overflow: "hidden",
+        position: "relative",
+        opacity: animating ? 0.85 : 1,
+        transition: "opacity 0.3s ease"
+      }}>
+        {/* TEXTURE */}
+        <div style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(-55deg,transparent,transparent 15px,rgba(255,255,255,0.02) 15px,rgba(255,255,255,0.02) 30px)" }} />
 
-      {/* TEXT */}
-      <div>
-        <h1 className="text-5xl mb-3">{slides[current].subtitle}</h1>
-        <h2 className="text-xl text-gray-600">{slides[current].title}</h2>
+        {/* CONTENT */}
+        <div style={{ position: "relative", zIndex: 1, maxWidth: isMobile ? "100%" : "420px" }}>
+          <span style={{ display: "inline-block", background: "#FEE12B", color: "#111", fontSize: "10px", fontWeight: "800", letterSpacing: "2px", textTransform: "uppercase", padding: "4px 10px", borderRadius: "4px", marginBottom: isMobile ? "12px" : "20px" }}>
+            {s.tag}
+          </span>
+          <h1 style={{ fontSize: isMobile ? "clamp(22px, 6vw, 32px)" : "clamp(36px, 5vw, 56px)", fontWeight: "900", color: "white", margin: "0 0 10px", lineHeight: 1.1, letterSpacing: "-1px" }}>
+            {s.title.split("\n").map((line, i) => <span key={i}>{line}<br /></span>)}
+          </h1>
+          <p style={{ color: "#777", fontSize: isMobile ? "12px" : "15px", margin: "0 0 20px", fontWeight: "500", lineHeight: 1.5 }}>
+            {s.subtitle}
+          </p>
+          <button
+            onClick={() => navigate(s.link)}
+            style={{ padding: isMobile ? "11px 20px" : "14px 28px", background: "#FEE12B", color: "#111", border: "none", borderRadius: "10px", fontWeight: "800", fontSize: isMobile ? "13px" : "15px", cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}
+          >
+            {s.cta} →
+          </button>
+        </div>
 
-        <button className="mt-5 bg-orange-500 text-white px-6 py-2 rounded">
-          Shop Now
-        </button>
+        {/* IMAGE — hide on very small screens */}
+        {!isMobile && (
+          <div style={{ position: "relative", zIndex: 1, flexShrink: 0 }}>
+            <div style={{ position: "absolute", inset: "-20px", background: "radial-gradient(circle, rgba(254,225,43,0.15) 0%, transparent 70%)" }} />
+            <img src={s.image} alt={s.title} style={{ width: "280px", height: "240px", objectFit: "cover", borderRadius: "14px", position: "relative", zIndex: 1, opacity: 0.9 }} />
+          </div>
+        )}
+
+        {/* SLIDE NUMBER */}
+        <div style={{ position: "absolute", bottom: "16px", right: "20px", fontSize: "12px", fontWeight: "700", fontFamily: "monospace" }}>
+          <span style={{ color: "#FEE12B" }}>{String(index + 1).padStart(2, "0")}</span>
+          <span style={{ color: "#444", margin: "0 4px" }}>/</span>
+          <span style={{ color: "#444" }}>{String(slides.length).padStart(2, "0")}</span>
+        </div>
       </div>
-
-      {/* IMAGE */}
-      <img
-        src={slides[current].image}
-        className="w-80"
-      />
-
-      {/* LEFT BUTTON */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-2 text-2xl"
-      >
-        ⬅
-      </button>
-
-      {/* RIGHT BUTTON */}
-      <button
-        onClick={nextSlide}
-        className="absolute right-2 text-2xl"
-      >
-        ➡
-      </button>
 
       {/* DOTS */}
-      <div className="absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-2">
-
-        {slides.map((_,index)=>(
-          <div
-            key={index}
-            className={`w-3 h-3 rounded-full ${
-              current === index ? "bg-orange-500" : "bg-gray-300"
-            }`}
-          ></div>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "12px" }}>
+        {slides.map((_, i) => (
+          <button key={i} onClick={() => goTo(i)} style={{ height: "8px", width: i === index ? "28px" : "8px", borderRadius: "4px", border: "none", cursor: "pointer", padding: 0, background: i === index ? "#111" : "#ddd", transition: "all 0.3s ease" }} />
         ))}
-
       </div>
-
     </div>
-
   );
-
 }
 
 export default HeroSlider;

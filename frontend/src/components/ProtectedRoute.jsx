@@ -1,11 +1,13 @@
 import { Navigate } from "react-router-dom";
+import { getUser, getToken } from "../utils/auth";
 
-function ProtectedRoute({ children }){
+function ProtectedRoute({ children }) {
+  const token = getToken();
+  const user = getUser();
 
-  const token = localStorage.getItem("token");
-
-  if(!token){
-    return <Navigate to="/login" />;
+  if (!token || token === "undefined" || !user) {
+    localStorage.clear(); // optional but good
+    return <Navigate to="/login" replace />;
   }
 
   return children;

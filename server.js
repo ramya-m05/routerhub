@@ -1,38 +1,52 @@
-require("dotenv").config();
-
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
-const app = express();   // ✅ FIRST create app
+require("dotenv").config();
 
-// Middleware
+const app = express();
+
+// ROUTES
+const authRoutes = require("./routes/authRoutes");
+const productRoutes = require("./routes/productRoutes");
+const orderRoutes = require("./routes/orderRoutes");
+const userRoutes = require("./routes/userRoutes"); // ✅ ADD THIS
+const paymentRoutes = require("./routes/paymentRoutes");
+
+
+// MIDDLEWARE
 app.use(cors({
-  origin: "*"
+  origin: ["http://localhost:5173", "https://routerkart.in"],
+  credentials: true
 }));
+app.use((req, res, next) => {
+  console.log("REQ HIT:", req.method, req.url);
+  next();
+});
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("✅ MongoDB Connected"))
-.catch(err => console.error("❌ MongoDB Error:", err));
-
-// Routes
-const authRoutes = require("./routes/authRoutes");
-const orderRoutes = require("./routes/orderRoutes");
-const productRoutes = require("./routes/productRoutes");
-
+// ROUTE USE
+app.use("/api/payment", paymentRoutes);
 app.use("/api/auth", authRoutes);
-app.use("/api/orders", orderRoutes);
 app.use("/api/products", productRoutes);
+app.use("/api/orders", orderRoutes);
+app.use("/api/users", userRoutes); // ✅ NOW WORKS
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("ROUTERHUB API Running 🚀");
+// DB CONNECTION
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,
+})
+.then(() => {
+  console.log("✅ MongoDB Connected");
+  console.log("DB Name:", mongoose.connection.name);
+})
+.catch(err => {
+  console.error("❌ MongoDB Error:", err.message);
 });
 
-// Start server
+// SERVER START
 const PORT = process.env.PORT || 5000;
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

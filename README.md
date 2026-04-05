@@ -1,6 +1,6 @@
-# RouterHub
+# Routerkart
 
-RouterHub is a full-stack inventory management system for router products.
+Routerkart is a full-stack inventory management system for router products.
 
 ## Tech Stack
 

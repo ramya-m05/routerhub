@@ -1,99 +1,116 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { getUser, getToken } from "./utils/auth";
+
+import { CartProvider } from "./context/CartContext";
+import { WishlistProvider } from "./context/WishlistContext";
+
+import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+import WhatsAppButton from "./components/WhatsAppButton";
 
 import Home from "./pages/Home";
 import Store from "./pages/Store";
-import ProductDetails from "./pages/ProductDetails";
-import AdminDashboard from "./pages/AdminDashboard";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
+import ForgotPassword from "./pages/ForgotPassword";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Orders from "./pages/Orders";
-import AdminOrders from "./pages/AdminOrders";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+import OrderHistory from "./pages/OrderHistory";
 import Profile from "./pages/Profile";
 import Wishlist from "./pages/Wishlist";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
+import ProductDetails from "./pages/ProductDetails";
 
-function App(){
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminOrders from "./pages/AdminOrders";
 
-  return(
+function App() {
+  const token = getToken();
+  const user = getUser();
 
-    <Router>
+  return (
+    <CartProvider>
+      <WishlistProvider>
+        <Router>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                fontFamily: "'DM Sans', sans-serif",
+                fontWeight: "600",
+                fontSize: "14px",
+                borderRadius: "10px",
+                boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+              },
+              success: { iconTheme: { primary: "#FEE12B", secondary: "#111" } },
+            }}
+          />
 
-      <Routes>
+          <Routes>
+            {/* ── Public ── */}
+            <Route path="/" element={<Home />} />
+            <Route path="/store" element={<Store />} />
+            <Route path="/product/:id" element={<ProductDetails />} />
 
-        <Route path="/" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+            {/* Login */}
+            <Route
+              path="/login"
+              element={
+                token ? <Navigate to="/store" replace /> : <Login />
+              }
+            />
 
-        <Route path="/home" element={<Home />} />
+            {/* Signup */}
+            <Route
+              path="/signup"
+              element={
+                token ? <Navigate to="/store" replace /> : <Signup />
+              }
+            />
 
-        <Route
-          path="/store"
-          element={
-            <ProtectedRoute>
-              <Store/>
-            </ProtectedRoute>
-          }
-        />
+            {/* Forgot Password */}
+            <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        <Route path="/product/:id" element={<ProductDetails />} />
+            {/* Admin Login */}
+            <Route
+              path="/admin/login"
+              element={
+                token && user?.role === "admin"
+                  ? <Navigate to="/admin" replace />
+                  : <AdminLogin />
+              }
+            />
 
-        <Route path="/cart" element={<Cart />} />
+            {/* ── Protected ── */}
+            <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/order-history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
-        <Route path="/checkout" element={<Checkout />} />
+            {/* ── Admin ── */}
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+            {/* ── Fallback ── */}
+            <Route
+              path="*"
+              element={
+                token
+                  ? <Navigate to="/store" replace />
+                  : <Navigate to="/" replace />
+              }
+            />
+          </Routes>
 
-
-        <Route path="/wishlist" element={<Wishlist />} />
-        <Route
-          path="/orders"
-          element={
-            <ProtectedRoute>
-              <Orders/>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile/>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminDashboard/>
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-
-        <Route
-          path="/admin/orders"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AdminOrders/>
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-
-      </Routes>
-
-    </Router>
-
+          <WhatsAppButton />
+        </Router>
+      </WishlistProvider>
+    </CartProvider>
   );
-
 }
 
 export default App;
