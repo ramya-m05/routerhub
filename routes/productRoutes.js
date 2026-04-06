@@ -19,7 +19,7 @@ const upload = require("../middleware/upload");
 
 
 // PUBLIC
-router.get("/", getAllProducts);
+router.get("/", getProducts);
 
 // ✅ REVIEWS FIRST
 router.get("/:id/reviews", getReviews);
