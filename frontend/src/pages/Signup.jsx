@@ -69,9 +69,11 @@ useEffect(() => {
 
     console.log("OTP API CALLED");
 
-    const res = await API.post("/auth/send-otp", {
-      email,
-    });
+    await API.post("/auth/send-otp", {
+  name,
+  email,
+  password,
+});
 
     console.log("OTP SUCCESS:", res.data);
 

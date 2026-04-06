@@ -23,10 +23,15 @@ const getRole = (user) => {
 
 const pendingSignups = new Map();
 
+if (!name || !email || !password) {
+  return res.status(400).json({
+    message: "Name, email and password required",
+  });
+}
 /* ================= SEND OTP ================= */
 exports.sendSignupOtp = async (req, res) => {
   try {
-    const { email } = req.body;
+    const { name, email, password  } = req.body;
 
     console.log("📩 Email:", email);
 
@@ -46,8 +51,14 @@ exports.sendSignupOtp = async (req, res) => {
     const otp = generateOtp();
 
     if (!user) {
-      user = new User({ email });
-    }
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  user = new User({
+    name,
+    email,
+    password: hashedPassword,
+  });
+}
 
     user.otp = otp;
     user.otpExpires = Date.now();
