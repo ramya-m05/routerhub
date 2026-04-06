@@ -26,17 +26,44 @@ const pendingSignups = new Map();
 /* ─── SEND OTP ─────────────────────────── */
 exports.sendSignupOtp = async (req, res) => {
   try {
-    console.log("REQ BODY:", req.body); // 🔥 ADD
-
     const { email } = req.body;
 
-    console.log("EMAIL:", email); // 🔥 ADD
+    console.log("📩 Email:", email);
 
     if (!email) {
       return res.status(400).json({ message: "Email required" });
     }
 
     let user = await User.findOne({ email });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    if (!user) {
+      user = new User({ email });
+    }
+
+    user.otp = otp;
+    user.otpExpires = Date.now();
+
+    await user.save();
+
+    // 🔥 CRITICAL CHANGE
+    const sent = await sendOtpEmail(email, otp);
+
+    if (!sent) {
+      console.log("❌ Email failed but continuing");
+      return res.status(200).json({
+        message: "OTP generated but email failed (check logs)",
+      });
+    }
+
+    res.json({ message: "OTP sent successfully" });
+
+  } catch (err) {
+    console.error("❌ OTP ERROR:", err); // 🔥 IMPORTANT
+    res.status(500).json({ message: err.message });
+  }
+};
 
     // 🔥 RATE LIMIT FIX
     if (user?.otpExpires && Date.now() - user.otpExpires < 60000) {
