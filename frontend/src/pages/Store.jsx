@@ -33,10 +33,16 @@ function Store() {
     finally { setLoading(false); }
   };
 
-  const filtered = products
-    .filter(p => selectedCategory === "All" || p.category === selectedCategory)
-    .filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
-
+ const filtered = products
+  .filter(
+    p =>
+      selectedCategory.toLowerCase() === "all" ||
+      p.category?.toLowerCase() === selectedCategory.toLowerCase()
+  )
+  .filter(p =>
+    p.name?.toLowerCase().includes(search.toLowerCase())
+  );
+  
   return (
     <div style={{ background: "#F7F7F5", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif" }}>
       <Navbar products={products} setSearch={setSearch} />

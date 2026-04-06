@@ -6,14 +6,15 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.hostinger.com",
+  host: process.env.EMAIL_HOST,
   port: 465,
-  secure: true, // MUST be true for 465
+  secure: true, // ✅ MUST be true for 465
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
+/* ─── Verify SMTP ─────────────────────────── */
 transporter.verify((error, success) => {
   if (error) {
     console.log("SMTP ERROR:", error);
@@ -22,26 +23,28 @@ transporter.verify((error, success) => {
   }
 });
 
+
 /* ─── Shared email wrapper ─────────────────────────── */
+/* ─── Shared email sender ─────────────────── */
 const sendEmail = async ({ to, subject, html }) => {
   try {
     console.log("📤 Sending to:", to);
 
     const info = await transporter.sendMail({
-  from: `"RouterKart" <admin@routerkart.in>`,
-  to,
-  subject,
-  html,
-});
+      from: `"RouterKart" <${process.env.EMAIL_USER}>`,
+      to,
+      subject,
+      html,
+    });
 
     console.log("✅ SUCCESS:", info.response);
     return true;
-
   } catch (err) {
-    console.error("❌ ERROR:", err);
+    console.error("❌ EMAIL ERROR:", err);
     return false;
   }
 };
+
 
 /* ─── Brand colors ─────────────────────────────────── */
 const BG = "#111111";

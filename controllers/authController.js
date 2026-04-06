@@ -23,49 +23,48 @@ const getRole = (user) => {
 
 const pendingSignups = new Map();
 
-/* ================= SEND OTP ================= */
+/* ─── SEND OTP ─────────────────────────── */
 exports.sendSignupOtp = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { email } = req.body;
 
-    if (!name || !email || !password)
-      return res.status(400).json({ message: "All fields required" });
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
 
-    const emailKey = email.toLowerCase().trim();
+    let user = await User.findOne({ email });
 
-    const existing = await User.findOne({ email: emailKey });
-    if (existing)
-      return res.status(400).json({ message: "Email already registered" });
-
-    // ✅ RATE LIMIT (FIXED)
-    const existingPending = pendingSignups.get(emailKey);
-    if (
-      existingPending &&
-      Date.now() < existingPending.otpExpires - 9 * 60 * 1000
-    ) {
+    // 🔥 RATE LIMIT FIX
+    if (user?.otpExpires && Date.now() - user.otpExpires < 60000) {
       return res.status(429).json({
-        message: "Please wait before requesting another OTP",
+        message: "Please wait 1 minute before requesting OTP",
       });
     }
 
-    const otp = generateOtp();
-    const otpExpires = Date.now() + 10 * 60 * 1000;
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const otpExpires = Date.now();
 
-    pendingSignups.set(emailKey, {
-      name,
-      hashedPassword,
-      otp,
-      otpExpires,
-    });
+    if (!user) {
+      user = new User({ email });
+    }
 
-    await sendOtpEmail(emailKey, otp, "signup");
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+
+    await user.save();
+
+    const sent = await sendOtpEmail(email, otp);
+
+    if (!sent) {
+      return res.status(500).json({ message: "Failed to send OTP" });
+    }
 
     res.json({ message: "OTP sent successfully" });
+
   } catch (err) {
-    console.error("sendSignupOtp:", err);
-    res.status(500).json({ message: "Failed to send OTP" });
+    console.error("OTP ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
