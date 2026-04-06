@@ -23,7 +23,7 @@ const getRole = (user) => {
 
 const pendingSignups = new Map();
 
-/* ─── SEND OTP ─────────────────────────── */
+/* ================= SEND OTP ================= */
 exports.sendSignupOtp = async (req, res) => {
   try {
     const { email } = req.body;
@@ -36,7 +36,14 @@ exports.sendSignupOtp = async (req, res) => {
 
     let user = await User.findOne({ email });
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // 🔥 RATE LIMIT
+    if (user?.otpExpires && Date.now() - user.otpExpires < 60000) {
+      return res.status(429).json({
+        message: "Please wait 1 minute before requesting OTP",
+      });
+    }
+
+    const otp = generateOtp();
 
     if (!user) {
       user = new User({ email });
@@ -47,56 +54,18 @@ exports.sendSignupOtp = async (req, res) => {
 
     await user.save();
 
-    // 🔥 CRITICAL CHANGE
     const sent = await sendOtpEmail(email, otp);
 
     if (!sent) {
-      console.log("❌ Email failed but continuing");
-      return res.status(200).json({
-        message: "OTP generated but email failed (check logs)",
-      });
+      console.log("❌ Email failed");
+      return res.status(500).json({ message: "Email service failed" });
     }
 
     res.json({ message: "OTP sent successfully" });
 
   } catch (err) {
-    console.error("❌ OTP ERROR:", err); // 🔥 IMPORTANT
+    console.error("❌ OTP ERROR:", err);
     res.status(500).json({ message: err.message });
-  }
-};
-
-    // 🔥 RATE LIMIT FIX
-    if (user?.otpExpires && Date.now() - user.otpExpires < 60000) {
-      return res.status(429).json({
-        message: "Please wait 1 minute before requesting OTP",
-      });
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-    const otpExpires = Date.now();
-
-    if (!user) {
-      user = new User({ email });
-    }
-
-    user.otp = otp;
-    user.otpExpires = otpExpires;
-
-    await user.save();
-
-    const sent = await sendOtpEmail(email, otp);
-
-    if (!sent) {
-  console.log("❌ OTP EMAIL FAILED");
-  return res.status(500).json({ message: "Email service failed" });
-}
-
-    res.json({ message: "OTP sent successfully" });
-
-  } catch (err) {
-    console.error("OTP ERROR:", err);
-    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -106,44 +75,40 @@ exports.verifySignupOtp = async (req, res) => {
     const emailKey = req.body.email?.toLowerCase().trim();
     const { otp } = req.body;
 
-    const data = pendingSignups.get(emailKey);
-    if (!data)
-      return res.status(400).json({ message: "No pending signup" });
+    const user = await User.findOne({ email: emailKey });
 
-    if (Date.now() > data.otpExpires) {
-      pendingSignups.delete(emailKey);
-      return res.status(400).json({ message: "OTP expired" });
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
     }
 
-    if (data.otp !== String(otp).trim())
+    if (!user.otp || user.otp !== String(otp)) {
       return res.status(400).json({ message: "Invalid OTP" });
+    }
 
-    const saved = await User.collection.insertOne({
-      name: data.name,
-      email: emailKey,
-      password: data.hashedPassword,
-      role: "user",
-      isEmailVerified: true,
-      addresses: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    // OPTIONAL: expiry check (if you later add proper expiry logic)
+    // if (Date.now() > user.otpExpires + 10 * 60 * 1000) {
+    //   return res.status(400).json({ message: "OTP expired" });
+    // }
 
-    pendingSignups.delete(emailKey);
+    user.otp = null;
+    user.otpExpires = null;
+    user.isEmailVerified = true;
 
-    const newUser = await User.findById(saved.insertedId);
-    const token = generateToken(newUser);
+    await user.save();
 
-    res.status(201).json({
+    const token = generateToken(user);
+
+    res.json({
       token,
       user: {
-        id: newUser._id,
-        name: newUser.name,
-        email: newUser.email,
-        role: getRole(newUser),
-        isAdmin: getRole(newUser) === "admin",
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: getRole(user),
+        isAdmin: getRole(user) === "admin",
       },
     });
+
   } catch (err) {
     console.error("verifySignupOtp:", err);
     res.status(500).json({ message: "Failed to verify OTP" });
@@ -153,20 +118,25 @@ exports.verifySignupOtp = async (req, res) => {
 /* ================= RESEND OTP ================= */
 exports.resendOtp = async (req, res) => {
   try {
-    const emailKey = req.body.email?.toLowerCase().trim();
-    const data = pendingSignups.get(emailKey);
+    const email = req.body.email?.toLowerCase().trim();
 
-    if (!data)
-      return res.status(400).json({ message: "No pending signup" });
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(400).json({ message: "User not found" });
+    }
 
     const otp = generateOtp();
-    const otpExpires = Date.now() + 10 * 60 * 1000;
 
-    pendingSignups.set(emailKey, { ...data, otp, otpExpires });
+    user.otp = otp;
+    user.otpExpires = Date.now();
 
-    await sendOtpEmail(emailKey, otp, "signup");
+    await user.save();
+
+    await sendOtpEmail(email, otp);
 
     res.json({ message: "OTP resent successfully" });
+
   } catch (err) {
     console.error("resendOtp:", err);
     res.status(500).json({ message: "Failed to resend OTP" });
@@ -207,7 +177,7 @@ exports.login = async (req, res) => {
   }
 };
 
-/* ================= FORGOT PASSWORD (TEMP) ================= */
+/* ================= FORGOT PASSWORD ================= */
 exports.forgotPasswordSendOtp = async (req, res) => {
   res.json({ message: "Send OTP working" });
 };
