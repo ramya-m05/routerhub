@@ -1,22 +1,32 @@
 // controllers/productController.js
+
 const Product = require("../models/Product");
 const Order   = require("../models/Order");
+const User    = require("../models/User");
 
 /* ─── GET all products ───────────────────────────── */
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find().lean();
     res.json(products);
-  } catch { res.status(500).json({ message: "Failed to fetch products" }); }
+  } catch (err) {
+    console.error("GET PRODUCTS ERROR:", err); // 🔥 IMPORTANT
+    res.status(500).json({ message: "Failed to fetch products" });
+  }
 };
 
 /* ─── GET single product ─────────────────────────── */
 exports.getProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    const product = await Product.findById(req.params.id).lean();
+    if (!product)
+      return res.status(404).json({ message: "Product not found" });
+
     res.json(product);
-  } catch { res.status(500).json({ message: "Failed to fetch product" }); }
+  } catch (err) {
+    console.error("GET PRODUCT ERROR:", err);
+    res.status(500).json({ message: "Failed to fetch product" });
+  }
 };
 
 /* ─── CREATE product ─────────────────────────────── */
@@ -41,7 +51,10 @@ exports.createProduct = async (req, res) => {
     });
 
     res.status(201).json(product);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    console.error("CREATE PRODUCT ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
 /* ─── UPDATE product ─────────────────────────────── */
@@ -66,10 +79,20 @@ exports.updateProduct = async (req, res) => {
 
     if (req.file) updateData.image = req.file.path;
 
-    const updated = await Product.findByIdAndUpdate(req.params.id, updateData, { new: true });
-    if (!updated) return res.status(404).json({ message: "Product not found" });
+    const updated = await Product.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    );
+
+    if (!updated)
+      return res.status(404).json({ message: "Product not found" });
+
     res.json(updated);
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    console.error("UPDATE PRODUCT ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
 /* ─── DELETE product ─────────────────────────────── */
@@ -77,66 +100,84 @@ exports.deleteProduct = async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ message: "Product deleted" });
-  } catch (err) { res.status(500).json({ message: err.message }); }
+  } catch (err) {
+    console.error("DELETE PRODUCT ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
 };
 
-/* ─── GET reviews for a product ─────────────────── */
+/* ─── GET reviews ───────────────────────────────── */
 exports.getReviews = async (req, res) => {
   try {
     const product = await Product.findById(req.params.id).select("reviews");
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product)
+      return res.status(404).json({ message: "Product not found" });
+
     res.json(product.reviews || []);
-  } catch { res.status(500).json({ message: "Failed to load reviews" }); }
+  } catch (err) {
+    console.error("GET REVIEWS ERROR:", err);
+    res.status(500).json({ message: "Failed to load reviews" });
+  }
 };
 
-/* ─── ADD review (verified buyer only) ──────────── */
+/* ─── ADD review ────────────────────────────────── */
 exports.addReview = async (req, res) => {
   try {
     const { rating, comment } = req.body;
     const productId = req.params.id;
     const userId    = req.user.id;
 
-    if (!rating || !comment?.trim())
-      return res.status(400).json({ message: "Rating and comment are required" });
+    if (!rating || !comment?.trim()) {
+      return res.status(400).json({
+        message: "Rating and comment are required"
+      });
+    }
 
-    // ── Verified buyer check ──
+    // ✅ Check if user bought product
     const bought = await Order.findOne({
       userId,
       status: { $in: ["delivered", "shipped", "out_for_delivery", "confirmed", "processing"] },
       "items.productId": productId
     });
 
-    if (!bought)
+    if (!bought) {
       return res.status(403).json({
-        message: "Only verified buyers who have purchased this product can write a review."
+        message: "Only verified buyers can review"
       });
+    }
 
-    // ── Prevent duplicate review ──
     const product = await Product.findById(productId);
-    if (!product) return res.status(404).json({ message: "Product not found" });
+    if (!product)
+      return res.status(404).json({ message: "Product not found" });
 
+    // ✅ Prevent duplicate review
     const alreadyReviewed = product.reviews.some(
       r => r.userId?.toString() === userId
     );
-    if (alreadyReviewed)
-      return res.status(400).json({ message: "You have already reviewed this product." });
 
-    const { name } = require("../models/User");
-    const User   = require("../models/User");
-    const user   = await User.findById(userId).select("name");
+    if (alreadyReviewed) {
+      return res.status(400).json({
+        message: "You already reviewed this product"
+      });
+    }
+
+    // ✅ FIXED USER FETCH
+    const user = await User.findById(userId).select("name");
 
     product.reviews.push({
       userId,
-      name:     user?.name || req.body.name || "Customer",
-      rating:   Number(rating),
-      comment:  comment.trim(),
+      name: user?.name || "Customer",
+      rating: Number(rating),
+      comment: comment.trim(),
       verified: true
     });
 
     await product.save();
+
     res.json(product.reviews);
+
   } catch (err) {
-    console.error("addReview:", err);
+    console.error("ADD REVIEW ERROR:", err);
     res.status(500).json({ message: "Failed to submit review" });
   }
 };
