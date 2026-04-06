@@ -26,7 +26,11 @@ const pendingSignups = new Map();
 /* ─── SEND OTP ─────────────────────────── */
 exports.sendSignupOtp = async (req, res) => {
   try {
+    console.log("REQ BODY:", req.body); // 🔥 ADD
+
     const { email } = req.body;
+
+    console.log("EMAIL:", email); // 🔥 ADD
 
     if (!email) {
       return res.status(400).json({ message: "Email required" });
@@ -57,8 +61,9 @@ exports.sendSignupOtp = async (req, res) => {
     const sent = await sendOtpEmail(email, otp);
 
     if (!sent) {
-      return res.status(500).json({ message: "Failed to send OTP" });
-    }
+  console.log("❌ OTP EMAIL FAILED");
+  return res.status(500).json({ message: "Email service failed" });
+}
 
     res.json({ message: "OTP sent successfully" });
 
