@@ -52,15 +52,7 @@ useEffect(() => {
   const strength = getStrength();
 
   /* ── 60-second countdown ── */
-  const startTimer = () => {
-    setTimer(60);
-    const t = setInterval(() => {
-      setTimer(prev => {
-        if (prev <= 1) { clearInterval(t); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+  const startTimer = () => setTimer(60);
 
   /* ── Send OTP ── */
   const handleSendOtp = async () => {
@@ -69,15 +61,19 @@ useEffect(() => {
 
     console.log("OTP API CALLED");
 
-    await API.post("/auth/send-otp", {
-  name,
-  email,
-  password,
-});
+    const res = await API.post("/auth/send-otp", {
+      name,
+      email,
+      password,
+    });
 
     console.log("OTP SUCCESS:", res.data);
 
     toast.success("OTP sent successfully");
+
+    // 🔥 IMPORTANT
+    setStep(STEP.OTP);
+    startTimer();
 
   } catch (err) {
     console.log("OTP ERROR:", err.response?.data || err.message);
@@ -87,7 +83,6 @@ useEffect(() => {
     );
 
   } finally {
-    // 🔥 THIS IS THE FIX
     setLoading(false);
   }
 };
@@ -122,9 +117,11 @@ res.data.user.role === "admin"
   try {
     console.log("RESEND CLICKED:", email);
 
-    await API.post("/auth/resend-otp", {
+    const res = await API.post("/auth/resend-otp", {
       email: email.trim().toLowerCase(),
     });
+    console.log("RESEND SUCCESS:", res.data);
+
 
     toast.success("New OTP sent!");
     setOtp("");
