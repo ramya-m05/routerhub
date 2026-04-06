@@ -64,37 +64,28 @@ useEffect(() => {
 
   /* ── Send OTP ── */
   const handleSendOtp = async () => {
-  if (loading) return;
-
-  if (!email) {
-    toast.error("Please enter email");
-    return;
-  }
-
-  if (password !== confirmPass) {
-    toast.error("Passwords do not match");
-    return;
-  }
-
-  console.log("OTP API CALLED");
-
-  setLoading(true);
-
   try {
-    await API.post("/auth/send-otp", {
-  name,
-  email: email.trim().toLowerCase(),
-  password
-});
+    setLoading(true);
 
-    toast.success("OTP sent to your email");
+    console.log("OTP API CALLED");
 
-    setStep(STEP.OTP);     // ✅ MOVE TO OTP SCREEN
-    startTimer();          // ✅ START TIMER
+    const res = await API.post("/auth/send-otp", {
+      email,
+    });
+
+    console.log("OTP SUCCESS:", res.data);
+
+    toast.success("OTP sent successfully");
 
   } catch (err) {
-    toast.error(err.response?.data?.message || "Failed to send OTP");
+    console.log("OTP ERROR:", err.response?.data || err.message);
+
+    toast.error(
+      err.response?.data?.message || "Failed to send OTP"
+    );
+
   } finally {
+    // 🔥 THIS IS THE FIX
     setLoading(false);
   }
 };
