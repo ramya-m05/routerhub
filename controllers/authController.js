@@ -129,10 +129,23 @@ exports.resendOtp = async (req, res) => {
   try {
     const email = req.body.email?.toLowerCase().trim();
 
+    console.log("🔁 Resend OTP:", email);
+
+    if (!email) {
+      return res.status(400).json({ message: "Email required" });
+    }
+
     const user = await User.findOne({ email });
 
     if (!user) {
       return res.status(400).json({ message: "User not found" });
+    }
+
+    // 🔥 RATE LIMIT (IMPORTANT)
+    if (user.otpExpires && Date.now() - user.otpExpires < 30000) {
+      return res.status(429).json({
+        message: "Wait 30 seconds before resending OTP",
+      });
     }
 
     const otp = generateOtp();
@@ -142,13 +155,16 @@ exports.resendOtp = async (req, res) => {
 
     await user.save();
 
-    await sendOtpEmail(email, otp);
+    // 🔥 NON-BLOCKING EMAIL (FAST)
+    sendOtpEmail(email, otp).catch(err =>
+      console.error("❌ Resend email failed:", err)
+    );
 
     res.json({ message: "OTP resent successfully" });
 
   } catch (err) {
     console.error("resendOtp:", err);
-    res.status(500).json({ message: "Failed to resend OTP" });
+    res.status(500).json({ message: err.message });
   }
 };
 

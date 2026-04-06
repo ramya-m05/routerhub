@@ -117,18 +117,28 @@ res.data.user.role === "admin"
 
   /* ── Resend OTP ── */
   const handleResend = async () => {
-    setLoading(true);
-    try {
-      await API.post("/auth/resend-otp", { email: email.trim().toLowerCase() });
-      toast.success("New OTP sent!");
-      setOtp("");
-      startTimer();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to resend OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+
+  try {
+    console.log("RESEND CLICKED:", email);
+
+    await API.post("/auth/resend-otp", {
+      email: email.trim().toLowerCase(),
+    });
+
+    toast.success("New OTP sent!");
+    setOtp("");
+    startTimer(); // ✅ only this
+
+  } catch (err) {
+    console.log("RESEND ERROR:", err.response?.data);
+    toast.error(
+      err.response?.data?.message || "Failed to resend OTP"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   /* ── Shared styles ── */
   const inputStyle = {
