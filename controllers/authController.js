@@ -23,11 +23,7 @@ const getRole = (user) => {
 
 const pendingSignups = new Map();
 
-if (!name || !email || !password) {
-  return res.status(400).json({
-    message: "Name, email and password required",
-  });
-}
+
 /* ================= SEND OTP ================= */
 exports.sendSignupOtp = async (req, res) => {
   try {
