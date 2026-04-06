@@ -24,20 +24,22 @@ const getRole = (user) => {
 const pendingSignups = new Map();
 
 
-/* ================= SEND OTP ================= */
 exports.sendSignupOtp = async (req, res) => {
   try {
-    const { name, email, password  } = req.body;
+    const { name, email, password } = req.body;
 
     console.log("📩 Email:", email);
 
-    if (!email) {
-      return res.status(400).json({ message: "Email required" });
+    // ✅ FULL VALIDATION
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: "Name, email and password are required",
+      });
     }
 
     let user = await User.findOne({ email });
 
-    // 🔥 RATE LIMIT
+    // ✅ RATE LIMIT
     if (user?.otpExpires && Date.now() - user.otpExpires < 60000) {
       return res.status(429).json({
         message: "Please wait 1 minute before requesting OTP",
@@ -46,28 +48,28 @@ exports.sendSignupOtp = async (req, res) => {
 
     const otp = generateOtp();
 
+    // ✅ CREATE USER IF NOT EXISTS
     if (!user) {
-  const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 10);
 
-  user = new User({
-    name,
-    email,
-    password: hashedPassword,
-  });
-}
+      user = new User({
+        name,
+        email,
+        password: hashedPassword,
+      });
+    }
 
     user.otp = otp;
     user.otpExpires = Date.now();
 
     await user.save();
 
-    const sent = await sendOtpEmail(email, otp);
+    // 🔥 NON-BLOCKING EMAIL (FAST)
+    sendOtpEmail(email, otp).catch(err =>
+      console.error("❌ Email failed:", err)
+    );
 
-    if (!sent) {
-      console.log("❌ Email failed");
-      return res.status(500).json({ message: "Email service failed" });
-    }
-
+    // ✅ INSTANT RESPONSE
     res.json({ message: "OTP sent successfully" });
 
   } catch (err) {
