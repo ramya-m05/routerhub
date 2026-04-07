@@ -28,6 +28,10 @@ exports.createOrder = async (req, res) => {
       return res.status(400).json({ message: "Invalid amount" });
 
     const razorpay = getRazorpay();
+    if (!amount || amount < 1) {
+  return res.status(400).json({ message: "Invalid amount" });
+}
+
 
     const order = await razorpay.orders.create({
       amount:   Math.round(Number(amount) * 100), // paise

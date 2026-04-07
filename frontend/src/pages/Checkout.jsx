@@ -92,46 +92,102 @@ useEffect(() => {
   };
 
   const placeOrder = async () => {
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      const fullAddress = buildAddress();
-      const amount = paymentMode === "cod" ? COD_ADVANCE : grandTotal;
-      const { data } = await API.post("/payment/create-order", { amount });
+  if (!validate()) return;
 
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: data.amount,
-        currency: "INR",
-        name: "RouterKart",
-        description: paymentMode === "cod" ? `COD Advance — ₹${COD_ADVANCE}` : "Order Payment",
-        order_id: data.id,
-        handler: async () => {
-          await API.post("/orders", {
-            items: cart.map(i => ({ productId: i._id, name: i.name, price: i.price, qty: i.qty })),
-            address: fullAddress,
-            addressDetails: { doorNo, houseName, cross, landmark, city, district, pincode },
-            phone,
-            paymentMode,
-            ...(paymentMode === "cod" && { advancePaid: COD_ADVANCE, amountDueOnDelivery: codOnDelivery, paymentStatus: "advance_paid" }),
-            ...(paymentMode === "online" && { paymentStatus: "paid" }),
-          });
-          clearCart();
-          toast.success(paymentMode === "cod"
+  setLoading(true);
+
+  try {
+    const fullAddress = buildAddress();
+
+    // 🔥 FIX: ensure correct amount
+    const amount = paymentMode === "cod"
+      ? COD_ADVANCE
+      : grandTotal;
+      console.log("Frontend Amount:", amount);
+
+    // 🔥 CALL BACKEND
+    const { data } = await API.post("/payment/create-order", {
+      amount,
+    });
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+
+      amount: data.amount,           // ✅ from backend (already in paise)
+      currency: data.currency,       // ✅ use backend currency
+      order_id: data.id,             // ✅ REQUIRED
+
+      name: "RouterKart",
+      description:
+        paymentMode === "cod"
+          ? `COD Advance — ₹${COD_ADVANCE}`
+          : "Order Payment",
+
+      prefill: {                     // ✅ improves success rate
+        name,
+        email,
+        contact: phone,
+      },
+
+      handler: async (response) => {
+        console.log("PAYMENT SUCCESS:", response);
+
+        await API.post("/orders", {
+          items: cart.map(i => ({
+            productId: i._id,
+            name: i.name,
+            price: i.price,
+            qty: i.qty
+          })),
+          address: fullAddress,
+          addressDetails: {
+            doorNo, houseName, cross, landmark,
+            city, district, pincode
+          },
+          phone,
+          paymentMode,
+
+          ...(paymentMode === "cod" && {
+            advancePaid: COD_ADVANCE,
+            amountDueOnDelivery: codOnDelivery,
+            paymentStatus: "advance_paid"
+          }),
+
+          ...(paymentMode === "online" && {
+            paymentStatus: "paid"
+          }),
+        });
+
+        clearCart();
+
+        toast.success(
+          paymentMode === "cod"
             ? `Order placed! ₹${codOnDelivery.toLocaleString()} due on delivery 🎉`
-            : "Payment successful! 🎉");
-          navigate("/orders");
-        }
-      };
-      new window.Razorpay(options).open();
-    } catch (err) {
-      console.log(err);
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-    console.log("TOKEN:", localStorage.getItem("token"));
-  };
+            : "Payment successful! 🎉"
+        );
+
+        navigate("/orders");
+      },
+
+      modal: {
+        ondismiss: () => {
+          toast.error("Payment cancelled");
+        },
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+
+  } catch (err) {
+    console.log("PAYMENT ERROR:", err.response?.data || err);
+    toast.error(err.response?.data?.message || "Payment failed");
+  } finally {
+    setLoading(false);
+  }
+
+  console.log("TOKEN:", localStorage.getItem("token"));
+};
 
   const inp = {
     width: "100%", padding: "12px 14px", border: "2px solid #e5e5e5",
