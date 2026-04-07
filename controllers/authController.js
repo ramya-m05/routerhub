@@ -97,14 +97,26 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "User not found" });
     }
 
-    const match = await bcrypt.compare(password, user.password);
+    console.log("INPUT PASSWORD:", password);
+    console.log("DB PASSWORD:", user.password);
+
+    let match = false;
+
+    // ✅ CHECK IF PASSWORD IS HASHED
+    if (user.password.startsWith("$2b$")) {
+      match = await bcrypt.compare(password.trim(), user.password);
+    } else {
+      // 🔥 fallback for old users (plain password)
+      match = password.trim() === user.password;
+    }
+
+    console.log("MATCH:", match);
 
     if (!match) {
       return res.status(400).json({ message: "Incorrect password" });
     }
 
     const token = generateToken(user);
-    const role = getRole(user);
 
     res.json({
       token,
@@ -112,17 +124,15 @@ exports.login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role,
-        isAdmin: role === "admin",
+        role: getRole(user),
       },
     });
 
   } catch (err) {
-    console.error("login:", err);
+    console.error("login error:", err);
     res.status(500).json({ message: "Login failed" });
   }
 };
-
 /* ================= FORGOT PASSWORD ================= */
 exports.forgotPasswordSendOtp = async (req, res) => {
   res.json({ message: "Disabled for now" });
