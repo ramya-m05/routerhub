@@ -40,35 +40,35 @@ function Signup() {
   };
 
   const handleSignup = async () => {
-    if (!validate()) return;
-    setLoading(true);
-    try {
-      const res = await API.post("/auth/register", {
-        name:     name.trim(),
-        email:    email.trim().toLowerCase(),
-        password,
-      });
-      // If backend returns token directly on register, log them in immediately
-      if (res.data.token) {
-        localStorage.setItem("token",    res.data.token);
-        localStorage.setItem("role",     res.data.role     || "user");
-        localStorage.setItem("userName", res.data.name     || name.trim());
-        toast.success("Account created! Welcome to RouterKart 🎉");
-        navigate("/store");
-      } else {
-        toast.success("Account created! Please sign in.");
-        navigate("/login");
-      }
-    } catch (err) {
-      const msg = err.response?.data?.message || "";
-      if (msg.toLowerCase().includes("already"))
-        toast.error("This email is already registered. Please login.");
-      else
-        toast.error(msg || "Signup failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  if (!validate()) return;
+
+  setLoading(true);
+
+  try {
+    const res = await API.post("/auth/send-otp", {
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
+      password,
+    });
+
+    toast.success("Account created successfully");
+
+    // ✅ SAVE LOGIN
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+    localStorage.setItem("userName", res.data.user.name || "User");
+
+    // ✅ REDIRECT
+    res.data.user.role === "admin"
+      ? navigate("/admin")
+      : navigate("/store");
+
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Signup failed");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const inp = {
     width: "100%", padding: "12px 14px",
