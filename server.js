@@ -15,10 +15,16 @@ const paymentRoutes = require("./routes/paymentRoutes");
 
 
 // MIDDLEWARE
-app.use(cors({
-  origin: ["http://localhost:5173", "https://routerkart.in"],
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://www.routerkart.in",
+      "https://routerkart.in"
+    ],
+    credentials: true,
+  })
+);
 app.use((req, res, next) => {
   console.log("REQ HIT:", req.method, req.url);
   next();
