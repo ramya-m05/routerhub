@@ -97,90 +97,122 @@ useEffect(() => {
   setLoading(true);
 
   try {
+    const user = JSON.parse(localStorage.getItem("user"));
+
     const fullAddress = buildAddress();
+    const amount = paymentMode === "cod" ? COD_ADVANCE : grandTotal;
 
-    // 🔥 FIX: ensure correct amount
-    const amount = paymentMode === "cod"
-      ? COD_ADVANCE
-      : grandTotal;
-      console.log("Frontend Amount:", amount);
+    const { data } = await API.post("/payment/create-order", { amount });
 
-    // 🔥 CALL BACKEND
-    const { data } = await API.post("/payment/create-order", {
-      amount,
-    });
+    console.log("ORDER DATA:", data);
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-
-      amount: data.amount,           // ✅ from backend (already in paise)
-      currency: data.currency,       // ✅ use backend currency
-      order_id: data.id,             // ✅ REQUIRED
-
+      amount: data.amount,
+      currency: "INR",
       name: "RouterKart",
       description:
         paymentMode === "cod"
           ? `COD Advance — ₹${COD_ADVANCE}`
           : "Order Payment",
+      order_id: data.id,
 
-      prefill: {                     // ✅ improves success rate
-        name,
-        email,
-        contact: phone,
+      // ✅ PREFILL FIX
+      prefill: {
+        name: user?.name || "Customer",
+        email: user?.email || "",
       },
 
+      // ✅ SUCCESS HANDLER
       handler: async (response) => {
-        console.log("PAYMENT SUCCESS:", response);
+        try {
+          console.log("PAYMENT SUCCESS:", response);
 
-        await API.post("/orders", {
-          items: cart.map(i => ({
-            productId: i._id,
-            name: i.name,
-            price: i.price,
-            qty: i.qty
-          })),
-          address: fullAddress,
-          addressDetails: {
-            doorNo, houseName, cross, landmark,
-            city, district, pincode
-          },
-          phone,
-          paymentMode,
+          // 🔥 VERIFY PAYMENT
+          const verifyRes = await API.post("/payment/verify", {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          });
 
-          ...(paymentMode === "cod" && {
-            advancePaid: COD_ADVANCE,
-            amountDueOnDelivery: codOnDelivery,
-            paymentStatus: "advance_paid"
-          }),
+          if (!verifyRes.data?.verified) {
+            throw new Error("Verification failed");
+          }
 
-          ...(paymentMode === "online" && {
-            paymentStatus: "paid"
-          }),
-        });
+          // 🔥 CREATE ORDER
+          await API.post("/orders", {
+            items: cart.map((i) => ({
+              productId: i._id,
+              name: i.name,
+              price: i.price,
+              qty: i.qty,
+            })),
+            address: fullAddress,
+            addressDetails: {
+              doorNo,
+              houseName,
+              cross,
+              landmark,
+              city,
+              district,
+              pincode,
+            },
+            phone,
+            paymentMode,
+            email: user?.email,
 
-        clearCart();
+            ...(paymentMode === "cod" && {
+              advancePaid: COD_ADVANCE,
+              amountDueOnDelivery: codOnDelivery,
+              paymentStatus: "advance_paid",
+            }),
 
-        toast.success(
-          paymentMode === "cod"
-            ? `Order placed! ₹${codOnDelivery.toLocaleString()} due on delivery 🎉`
-            : "Payment successful! 🎉"
-        );
+            ...(paymentMode === "online" && {
+              paymentStatus: "paid",
+            }),
+          });
 
-        navigate("/orders");
+          // ✅ CLEANUP
+          clearCart();
+
+          toast.success(
+            paymentMode === "cod"
+              ? `Order placed! ₹${codOnDelivery.toLocaleString()} due on delivery 🎉`
+              : "Payment successful! 🎉"
+          );
+
+          navigate("/orders");
+        } catch (err) {
+          console.log("VERIFY ERROR:", err.response?.data || err);
+          toast.error("Payment verification failed");
+        }
       },
 
+      // ✅ CANCEL HANDLER
       modal: {
-        ondismiss: () => {
+        ondismiss: function () {
+          console.log("Payment popup closed");
           toast.error("Payment cancelled");
         },
       },
     };
 
     const rzp = new window.Razorpay(options);
+
+    // ✅ FAILURE HANDLER
+    rzp.on("payment.failed", function (response) {
+      console.log("PAYMENT FAILED:", response.error);
+
+      toast.error(
+        response.error?.description || "Payment failed. Please try again."
+      );
+    });
+
     rzp.open();
 
   } catch (err) {
     console.log("PAYMENT ERROR:", err.response?.data || err);
+
     toast.error(err.response?.data?.message || "Payment failed");
   } finally {
     setLoading(false);

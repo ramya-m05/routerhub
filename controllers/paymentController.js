@@ -24,11 +24,7 @@ exports.createOrder = async (req, res) => {
   try {
     const { amount } = req.body;
 
-    if (!amount || isNaN(amount) || Number(amount) < 1)
-      return res.status(400).json({ message: "Invalid amount" });
-
-    const razorpay = getRazorpay();
-    if (!amount || amount < 1) {
+if (!amount || isNaN(amount) || Number(amount) < 1) {
   return res.status(400).json({ message: "Invalid amount" });
 }
 
