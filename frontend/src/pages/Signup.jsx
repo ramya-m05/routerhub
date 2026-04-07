@@ -5,134 +5,64 @@ import toast from "react-hot-toast";
 import { useIsMobile } from "../hooks/useIsMobile";
 
 // Two-step signup: FORM → OTP verification
-const STEP = { FORM: "form", OTP: "otp" };
+const STEP = { FORM: "form" };
 
 function Signup() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
   // Step 1
-  const [name,        setName]        = useState("");
-  const [email,       setEmail]       = useState("");
-  const [password,    setPassword]    = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
-  const [showPass,    setShowPass]    = useState(false);
+  const [showPass, setShowPass] = useState(false);
 
-  // Step 2
-  const [otp,     setOtp]     = useState("");
-  const [step,    setStep]    = useState(STEP.FORM);
   const [loading, setLoading] = useState(false);
-  const [timer, setTimer] = useState(0);
-
-useEffect(() => {
-  if (timer > 0) {
-    const interval = setInterval(() => {
-      setTimer(prev => prev - 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }
-}, [timer]);
-
-const [cooldown, setCooldown] = useState(0);
-
-useEffect(() => {
-  if (cooldown > 0) {
-    const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
-    return () => clearTimeout(timer);
-  }
-}, [cooldown]);
 
   /* ── password strength ── */
   const getStrength = () => {
     if (!password) return null;
-    if (password.length < 6)  return { label: "Weak",   color: "#dc2626", pct: 33 };
-    if (password.length < 10) return { label: "Fair",   color: "#cc8800", pct: 66 };
-    return                           { label: "Strong",  color: "#16a34a", pct: 100 };
+    if (password.length < 6)
+      return { label: "Weak", color: "#dc2626", pct: 33 };
+    if (password.length < 10)
+      return { label: "Fair", color: "#cc8800", pct: 66 };
+    return { label: "Strong", color: "#16a34a", pct: 100 };
   };
+
   const strength = getStrength();
 
-  /* ── 60-second countdown ── */
-  const startTimer = () => setTimer(60);
-
-  /* ── Send OTP ── */
+  /* ── Signup (NO OTP) ── */
   const handleSendOtp = async () => {
-  try {
-    setLoading(true);
-
-    const res = await API.post("/auth/send-otp", {
-      name,
-      email,
-      password,
-    });
-
-    toast.success("Account created successfully");
-
-    // ✅ SAVE LOGIN
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    localStorage.setItem("userName", res.data.user.name || "User");
-
-    // ✅ REDIRECT
-    res.data.user.role === "admin"
-      ? navigate("/admin")
-      : navigate("/store");
-
-  } catch (err) {
-    toast.error(err.response?.data?.message || "Signup failed");
-  } finally {
-    setLoading(false);
-  }
-};
-
-  /* ── Verify OTP ── */
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) { toast.error("Please enter the 6-digit OTP"); return; }
-    setLoading(true);
     try {
-      const res = await API.post("/auth/verify-otp", {
-        email: email.trim().toLowerCase(),
-        otp:   otp.trim()
-      });
-      localStorage.setItem("token", res.data.token);
-localStorage.setItem("user", JSON.stringify(res.data.user));
-localStorage.setItem("userName", res.data.user.name || "User");
+      setLoading(true);
 
-res.data.user.role === "admin"
-  ? navigate("/admin")
-  : navigate("/store");;
+      const res = await API.post("/auth/send-otp", {
+        name,
+        email,
+        password,
+      });
+
+      toast.success("Account created successfully");
+
+      // ✅ SAVE LOGIN
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("userName", res.data.user.name || "User");
+
+      // ✅ REDIRECT
+      res.data.user.role === "admin"
+        ? navigate("/admin")
+        : navigate("/store");
+
     } catch (err) {
-      toast.error(err.response?.data?.message || "Invalid or expired OTP");
+      toast.error(err.response?.data?.message || "Signup failed");
     } finally {
       setLoading(false);
     }
   };
+}
 
-  /* ── Resend OTP ── */
-  const handleResend = async () => {
-  setLoading(true);
-
-  try {
-    console.log("RESEND CLICKED:", email);
-
-    const res = await API.post("/auth/resend-otp", {
-      email: email.trim().toLowerCase(),
-    });
-    console.log("RESEND SUCCESS:", res.data);
-
-
-    toast.success("New OTP sent!");
-    setOtp("");
-    startTimer(); // ✅ only this
-
-  } catch (err) {
-    console.log("RESEND ERROR:", err.response?.data);
-    toast.error(
-      err.response?.data?.message || "Failed to resend OTP"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
 
   /* ── Shared styles ── */
   const inputStyle = {
