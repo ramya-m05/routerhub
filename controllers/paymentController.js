@@ -19,31 +19,43 @@ const getRazorpay = () => {
 
 /* ─── Create Razorpay order ────────────────────────── */
 exports.createOrder = async (req, res) => {
-  console.log("CREATE ORDER HIT");
-    console.log("BODY:", req.body);
   try {
+    console.log("CREATE ORDER HIT");
+    console.log("BODY:", req.body);
+
     const { amount } = req.body;
 
-if (!amount || isNaN(amount) || Number(amount) < 1) {
-  return res.status(400).json({ message: "Invalid amount" });
-}
+    // ✅ VALIDATION
+    if (!amount || isNaN(amount) || Number(amount) < 1) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
 
+    // ✅ FIX: initialize razorpay properly
+    const razorpay = getRazorpay();
+
+    console.log("RAZORPAY INIT SUCCESS");
 
     const order = await razorpay.orders.create({
-      amount:   Math.round(Number(amount) * 100), // paise
+      amount: Math.round(Number(amount) * 100), // paise
       currency: "INR",
-      receipt:  "rk_" + Date.now(),
-      notes:    { source: "RouterKart" },
+      receipt: "rk_" + Date.now(),
+      notes: { source: "RouterKart" },
     });
 
+    console.log("ORDER CREATED:", order.id);
+
     res.json({
-      id:       order.id,
-      amount:   order.amount,
+      id: order.id,
+      amount: order.amount,
       currency: order.currency,
     });
+
   } catch (err) {
-    console.error("createRazorpayOrder:", err);
-    res.status(500).json({ message: err.message || "Failed to create payment order" });
+    console.error("❌ createOrder ERROR:", err);
+
+    res.status(500).json({
+      message: err.message || "Failed to create payment order",
+    });
   }
 };
 

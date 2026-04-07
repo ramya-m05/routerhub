@@ -5,36 +5,43 @@ import toast from "react-hot-toast";
 import { useIsMobile } from "../hooks/useIsMobile";
 
 /* ── simple email regex ── */
-const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+const isValidEmail = (v) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 function Login() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
-  const [email,    setEmail]    = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [loading,  setLoading]  = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // inline field-level errors
   const [emailErr, setEmailErr] = useState("");
 
+  /* ── auto redirect if already logged in ── */
   useEffect(() => {
-  const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "null");
 
-  if (token && user) {
-    user.role === "admin"
-      ? navigate("/admin")
-      : navigate("/store");
-  }
-}, []);
+    if (token && user) {
+      user.role === "admin"
+        ? navigate("/admin")
+        : navigate("/store");
+    }
+  }, [navigate]);
 
   /* ── validate email on blur ── */
   const handleEmailBlur = () => {
-    if (!email) { setEmailErr(""); return; }
+    if (!email) {
+      setEmailErr("");
+      return;
+    }
+
     if (!isValidEmail(email)) {
-      setEmailErr("Please enter a valid email address (e.g. you@example.com)");
+      setEmailErr(
+        "Please enter a valid email address (e.g. you@example.com)"
+      );
     } else {
       setEmailErr("");
     }
@@ -42,35 +49,61 @@ function Login() {
 
   /* ── login ── */
   const handleLogin = async () => {
-    // live validation before submit
-    if (!email.trim()) { toast.error("Please enter your email address"); return; }
-    if (!isValidEmail(email)) {
-      setEmailErr("Please enter a valid email address (e.g. you@example.com)");
+    // 🔥 VALIDATIONS
+    if (!email.trim()) {
+      toast.error("Please enter your email address");
       return;
     }
-    if (!password) { toast.error("Please enter your password"); return; }
+
+    if (!isValidEmail(email)) {
+      setEmailErr(
+        "Please enter a valid email address (e.g. you@example.com)"
+      );
+      return;
+    }
+
+    if (!password.trim()) {
+      toast.error("Please enter your password");
+      return;
+    }
 
     setLoading(true);
+
     try {
       const res = await API.post("/auth/login", {
-        email:    email.trim().toLowerCase(),
-        password,
+        email: email.trim().toLowerCase(),
+        password: password.trim(), // ✅ FIX (important)
       });
+
       console.log("LOGIN RESPONSE:", res.data);
+
+      // ✅ STORE DATA
       localStorage.setItem("token", res.data.token);
-localStorage.setItem("user", JSON.stringify(res.data.user));
-localStorage.setItem("userName", res.data.user.name || "User");
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem(
+        "userName",
+        res.data.user.name || "User"
+      );
 
-toast.success("Login successful 🚀");
+      toast.success("Login successful 🚀");
 
-res.data.user.role === "admin"
-  ? navigate("/admin")
-  : navigate("/store");
+      // ✅ REDIRECT
+      res.data.user.role === "admin"
+        ? navigate("/admin")
+        : navigate("/store");
+
     } catch (err) {
+      console.log("LOGIN ERROR:", err.response?.data || err);
+
       const msg = err.response?.data?.message;
-      if (msg === "User not found")     toast.error("No account found with this email ❌");
-      else if (msg === "Incorrect password") toast.error("Wrong password ❌");
-      else toast.error(msg || "Login failed. Please try again.");
+
+      if (msg === "User not found") {
+        toast.error("No account found with this email ❌");
+      } else if (msg === "Incorrect password") {
+        toast.error("Wrong password ❌");
+      } else {
+        toast.error(msg || "Login failed. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
