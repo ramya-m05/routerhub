@@ -59,29 +59,26 @@ useEffect(() => {
   try {
     setLoading(true);
 
-    console.log("OTP API CALLED");
-
     const res = await API.post("/auth/send-otp", {
       name,
       email,
       password,
     });
 
-    console.log("OTP SUCCESS:", res.data);
+    toast.success("Account created successfully");
 
-    toast.success("OTP sent successfully");
+    // ✅ SAVE LOGIN
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+    localStorage.setItem("userName", res.data.user.name || "User");
 
-    // 🔥 IMPORTANT
-    setStep(STEP.OTP);
-    startTimer();
+    // ✅ REDIRECT
+    res.data.user.role === "admin"
+      ? navigate("/admin")
+      : navigate("/store");
 
   } catch (err) {
-    console.log("OTP ERROR:", err.response?.data || err.message);
-
-    toast.error(
-      err.response?.data?.message || "Failed to send OTP"
-    );
-
+    toast.error(err.response?.data?.message || "Signup failed");
   } finally {
     setLoading(false);
   }
