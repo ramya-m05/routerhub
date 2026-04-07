@@ -4,23 +4,68 @@ export const CartContext = createContext();
 
 export function CartProvider({ children }) {
 
-  // ✅ LOAD FROM LOCALSTORAGE SAFELY
   const [cart, setCart] = useState(() => {
-  const stored = localStorage.getItem("cart");
-  return stored ? JSON.parse(stored) : [];
-});
+    const stored = localStorage.getItem("cart");
+    return stored ? JSON.parse(stored) : [];
+  });
 
-  // ✅ SAVE TO LOCALSTORAGE
   useEffect(() => {
-  localStorage.setItem("cart", JSON.stringify(cart));
-}, [cart]);
+    localStorage.setItem("cart", JSON.stringify(cart));
+  }, [cart]);
 
+  // ✅ ADD TO CART
   const addToCart = (product) => {
-    setCart(prev => [...prev, { ...product, qty: 1 }]);
+    setCart(prev => {
+      const exists = prev.find(p => p._id === product._id);
+      if (exists) {
+        return prev.map(p =>
+          p._id === product._id
+            ? { ...p, qty: p.qty + 1 }
+            : p
+        );
+      }
+      return [...prev, { ...product, qty: 1 }];
+    });
+  };
+
+  // ✅ INCREASE
+  const increaseQty = (id) => {
+    setCart(prev =>
+      prev.map(item =>
+        item._id === id
+          ? { ...item, qty: item.qty + 1 }
+          : item
+      )
+    );
+  };
+
+  // ✅ DECREASE
+  const decreaseQty = (id) => {
+    setCart(prev =>
+      prev
+        .map(item =>
+          item._id === id
+            ? { ...item, qty: item.qty - 1 }
+            : item
+        )
+        .filter(item => item.qty > 0) // remove if 0
+    );
+  };
+
+  // ✅ REMOVE
+  const removeFromCart = (id) => {
+    setCart(prev => prev.filter(item => item._id !== id));
   };
 
   return (
-    <CartContext.Provider value={{ cart, setCart, addToCart }}>
+    <CartContext.Provider value={{
+      cart,
+      setCart,
+      addToCart,
+      increaseQty,
+      decreaseQty,
+      removeFromCart
+    }}>
       {children}
     </CartContext.Provider>
   );
