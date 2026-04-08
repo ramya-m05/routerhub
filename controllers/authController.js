@@ -99,17 +99,20 @@ exports.login = async (req, res) => {
 
     console.log("INPUT PASSWORD:", password);
     console.log("DB PASSWORD:", user.password);
+    console.log("👉 INPUT PASSWORD:", password);
+console.log("👉 STORED PASSWORD:", user.password);
+console.log("👉 TYPE:", typeof user.password);
 
     let match = false;
 
     // ✅ CHECK IF PASSWORD IS HASHED
     if (user.password.startsWith("$2b$")) {
-      match = await bcrypt.compare(password.trim(), user.password);
-    } else {
-      // 🔥 fallback for old users (plain password)
-      match = password.trim() === user.password;
-    }
-
+  match = await bcrypt.compare(password.trim(), user.password);
+} else {
+  match = password.trim() === user.password;
+}
+const isHashed = user.password.startsWith("$2b$");
+console.log("👉 IS HASHED:", isHashed);
     console.log("MATCH:", match);
 
     if (!match) {
