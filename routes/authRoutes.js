@@ -3,6 +3,7 @@ const router  = express.Router();
 const auth    = require("../controllers/authController");
 
 // ── Signup (OTP bypass version) ──────────────
+router.post("/register", auth.register);
 router.post("/send-otp", auth.sendSignupOtp);
 
 // ── Login ───────────────────────────────────
