@@ -59,7 +59,7 @@ function App() {
             {/* Login */}
             <Route
               path="/login"
-              element={
+                element={
                 token ? <Navigate to="/store" replace /> : <Login />
               }
             />

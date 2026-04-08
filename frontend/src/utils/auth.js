@@ -1,16 +1,17 @@
+export const getToken = () => {
+  return localStorage.getItem("token");
+};
+
 export const getUser = () => {
   try {
-    const raw = localStorage.getItem("user");
-
-    if (!raw || raw === "undefined") return null;
-
-    return JSON.parse(raw);
+    return JSON.parse(localStorage.getItem("user"));
   } catch {
     return null;
   }
 };
 
-export const getToken = () => {
-  const token = localStorage.getItem("token");
-  return token && token !== "undefined" ? token : null;
+export const logout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.location.href = "/login";
 };

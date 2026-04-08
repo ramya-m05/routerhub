@@ -54,7 +54,7 @@ function Login() {
   }
 
   if (!isValidEmail(email)) {
-    setEmailErr("Please enter a valid email address (e.g. you@example.com)");
+    setEmailErr("Please enter a valid email address");
     return;
   }
 
@@ -73,14 +73,21 @@ function Login() {
 
     console.log("LOGIN RESPONSE:", res.data);
 
-    // ✅ Store safely
+    // ✅ STORE PROPERLY (THIS FIXES YOUR ISSUE)
     localStorage.setItem("token", res.data.token);
-    localStorage.setItem("userName", res.data.name);
-    localStorage.setItem("role", res.data.role);
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify({
+        name: res.data.name,
+        role: res.data.role,
+        email: res.data.email,
+      })
+    );
 
     toast.success("Login successful 🚀");
 
-    // ✅ Redirect
+    // ✅ REDIRECT
     if (res.data.role === "admin") {
       navigate("/admin");
     } else {
@@ -93,11 +100,11 @@ function Login() {
     const msg = err.response?.data?.message;
 
     if (msg === "User not found") {
-      toast.error("No account found with this email ❌");
+      toast.error("No account found ❌");
     } else if (msg === "Incorrect password") {
       toast.error("Wrong password ❌");
     } else {
-      toast.error(msg || "Login failed. Please try again.");
+      toast.error(msg || "Login failed");
     }
 
   } finally {
