@@ -33,14 +33,14 @@ if (token && user) {
     const res = await API.post("/auth/login", { email, password });
 
     // ✅ FIXED
-    if (res.data.user.role !== "admin") {
+    if (res.data.role !== "admin") {
       toast.error("Access denied. Admin only.");
       return;
     }
 
     localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    localStorage.setItem("userName", res.data.user.name || "Admin");
+    localStorage.setItem("user", JSON.stringify(res.data));
+    localStorage.setItem("userName", res.data.name || "Admin");
 
     toast.success("Welcome back, Admin ⚡");
     navigate("/admin");
