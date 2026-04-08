@@ -110,7 +110,7 @@ exports.login = async (req, res) => {
   }
 };
 
-/* ═════════ FORGOT PASSWORD (unchanged) ═════════ */
+/* ═════════ FORGOT PASSWORD ═════════ */
 
 const resetStore = new Map();
 const makeOtp    = () => crypto.randomInt(100000, 999999).toString();
@@ -134,6 +134,7 @@ exports.forgotPasswordSendOtp = async (req, res) => {
 
     res.json({ message: "OTP sent" });
   } catch (err) {
+    console.error("OTP ERROR:", err);
     res.status(500).json({ message: "Failed to send OTP" });
   }
 };
