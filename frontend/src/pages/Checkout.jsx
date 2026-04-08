@@ -95,6 +95,7 @@ useEffect(() => {
   if (!validate()) return;
 
   setLoading(true);
+  console.log("RAZORPAY KEY:", import.meta.env.VITE_RAZORPAY_KEY);
 
   try {
     const user = JSON.parse(localStorage.getItem("user"));
@@ -107,7 +108,7 @@ useEffect(() => {
     console.log("ORDER DATA:", data);
 
     const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: data.amount,
       currency: "INR",
       name: "RouterKart",
