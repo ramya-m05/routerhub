@@ -78,12 +78,12 @@ exports.createOrder = async (req, res) => {
     const user = await User.findById(req.user.id).select("name email");
     if (user) {
       Promise.allSettled([
-        sendOrderConfirmationEmail(order, user.email, user.name)
+        sendOrderConfirmationEmail(order, user.email, res.data.name)
           .then(() => Order.findByIdAndUpdate(order._id, { confirmationEmailSent: true })),
 
-        sendAdminOrderNotificationEmail(order, user.email, user.name),
+        sendAdminOrderNotificationEmail(order, user.email, res.data.name),
 
-        notifyAdminNewOrder(order, user.name, user.email)
+        notifyAdminNewOrder(order, res.data.name, user.email)
           .then(() => Order.findByIdAndUpdate(order._id, { adminNotified: true }))
       ]).then(results => {
         results.forEach((r, i) => {
