@@ -7,6 +7,7 @@ const handlePayment = async () => {
 
     console.log("ORDER DATA:", data);
 
+    // 2️⃣ Razorpay options
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: data.amount,
@@ -16,7 +17,7 @@ const handlePayment = async () => {
       name: "RouterKart",
       description: "Order Payment",
 
-      // ✅ OPTIONAL BUT GOOD
+      // ✅ Prefill (optional)
       prefill: {
         name: localStorage.getItem("userName") || "User",
         email: JSON.parse(localStorage.getItem("user"))?.email || "",
@@ -25,7 +26,7 @@ const handlePayment = async () => {
       handler: async function (response) {
         console.log("PAYMENT SUCCESS:", response);
 
-        // ✅ FIX: send correct fields
+        // ✅ Send ONLY correct fields (once)
         await API.post("/payment/verify", {
           razorpay_order_id: response.razorpay_order_id,
           razorpay_payment_id: response.razorpay_payment_id,
@@ -40,6 +41,7 @@ const handlePayment = async () => {
       },
     };
 
+    // 3️⃣ Open Razorpay
     const rzp = new window.Razorpay(options);
     rzp.open();
 
