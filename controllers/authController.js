@@ -98,37 +98,58 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password)
-      return res.status(400).json({ message: "Email and password are required" });
-
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user)
-      return res.status(400).json({ message: "User not found" });
-
-    // ── Compare using bcrypt ──
-    // Works whether password was hashed by pre-save hook (new accounts)
-    // or by manual bcrypt.hash (old accounts, if any)
-    const match = await bcrypt.compare(password, user.password);
-    if (!match)
-      return res.status(400).json({ message: "Incorrect password" });
-
-    const token = generateToken(user);
-    const role  = getRole(user);
-
-    // Silently upgrade old isAdmin:true accounts to role:"admin"
-    if (user.isAdmin === true && user.role !== "admin") {
-      User.findByIdAndUpdate(user._id, { role: "admin" }).catch(() => {});
+    // ✅ Validation
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "Email and password are required"
+      });
     }
 
-    res.json({
+    // ✅ Find user
+    const user = await User.findOne({
+      email: email.toLowerCase().trim()
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "User not found"
+      });
+    }
+
+    // ✅ Compare password correctly
+    const match = await bcrypt.compare(password, user.password);
+
+    if (!match) {
+      return res.status(400).json({
+        message: "Incorrect password"
+      });
+    }
+
+    // ✅ Generate token
+    const token = generateToken(user);
+
+    // ✅ Get role
+    const role = getRole(user);
+
+    // ✅ Optional admin upgrade
+    if (user.isAdmin === true && user.role !== "admin") {
+      await User.findByIdAndUpdate(user._id, { role: "admin" }).catch(() => {});
+    }
+
+    // ✅ Correct response
+    return res.json({
       token,
       role,
-      name:  res.data.name,
-      email: user.email,
+      name: user.name,
+      email: user.email
     });
+
   } catch (err) {
-    console.error("login error:", err);
-    res.status(500).json({ message: "Login failed. Please try again." });
+    console.error("🔥 LOGIN ERROR FULL:", err);
+
+    return res.status(500).json({
+      message: err.message
+    });
   }
 };
 
