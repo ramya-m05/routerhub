@@ -79,18 +79,17 @@ function Login() {
 
       // ✅ STORE DATA
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      localStorage.setItem(
-        "userName",
-        res.data.user.name || "User"
-      );
+localStorage.setItem("userName", res.data.name);
+localStorage.setItem("role", res.data.role);
 
       toast.success("Login successful 🚀");
 
       // ✅ REDIRECT
-      res.data.user.role === "admin"
-        ? navigate("/admin")
-        : navigate("/store");
+     if (res.data.role === "admin") {
+  navigate("/admin");
+} else {
+  navigate("/store");
+}
 
     } catch (err) {
       console.log("LOGIN ERROR:", err.response?.data || err);
