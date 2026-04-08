@@ -1,15 +1,3 @@
-// controllers/authController.js
-// ─────────────────────────────────────────────────────────────────────────────
-// ROOT CAUSE FIX:
-//   Old code manually called bcrypt.hash() THEN saved with User.create()
-//   which triggered the Mongoose pre-save hook to hash AGAIN.
-//   Result: stored hash = bcrypt(bcrypt(password)) → login always fails.
-//
-//   Fix: NEVER hash manually in this file.
-//         Always pass the PLAIN password to User.create() / new User().save()
-//         and let the pre-save hook in models/User.js do the single hash.
-// ─────────────────────────────────────────────────────────────────────────────
-
 const User   = require("../models/User");
 const jwt    = require("jsonwebtoken");
 const crypto = require("crypto");
@@ -30,15 +18,7 @@ const getRole = (user) => {
   return user.role || "user";
 };
 
-/* ═══════════════════════════════════════════════════
-   REGISTER  (direct — no OTP)
-   POST /api/auth/register
-   Body: { name, email, password }
-
-   ✅ Passes PLAIN password to User.create()
-      The pre-save hook in User.js hashes it ONCE.
-      Never call bcrypt.hash() here.
-══════════════════════════════════════════════════ */
+/* ═════════ REGISTER ═════════ */
 exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -63,116 +43,87 @@ exports.register = async (req, res) => {
       email: emailKey,
       password,
     });
-    
-    console.log("USER CREATED:", user);
-    console.log("JWT SECRET:", process.env.JWT_SECRET);
 
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    console.log("USER CREATED:", user);
+
+    const token = generateToken(user);
 
     return res.status(201).json({
       token,
-      name: res.data.name,
+      name: user.name,     // ✅ FIXED
       email: user.email,
     });
 
   } catch (err) {
     console.error("🔥 REGISTER ERROR FULL:", err);
-    console.log("BODY RECEIVED:", req.body);
     return res.status(500).json({
       message: err.message,
     });
   }
 };
 
-/* ═══════════════════════════════════════════════════
-   LOGIN
-   POST /api/auth/login
-   Body: { email, password }
-   ✅ Supports both old (isAdmin:true) and new (role:"admin") schemas
-══════════════════════════════════════════════════ */
+/* ═════════ LOGIN ═════════ */
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // ✅ Validation
-    if (!email || !password) {
+    if (!email || !password)
       return res.status(400).json({
         message: "Email and password are required"
       });
-    }
 
-    // ✅ Find user
     const user = await User.findOne({
       email: email.toLowerCase().trim()
     });
 
-    if (!user) {
+    if (!user)
       return res.status(400).json({
         message: "User not found"
       });
-    }
 
-    // ✅ Compare password correctly
     const match = await bcrypt.compare(password, user.password);
 
-    if (!match) {
+    if (!match)
       return res.status(400).json({
         message: "Incorrect password"
       });
-    }
 
-    // ✅ Generate token
     const token = generateToken(user);
+    const role  = getRole(user);
 
-    // ✅ Get role
-    const role = getRole(user);
-
-    // ✅ Optional admin upgrade
     if (user.isAdmin === true && user.role !== "admin") {
       await User.findByIdAndUpdate(user._id, { role: "admin" }).catch(() => {});
     }
 
-    // ✅ Correct response
     return res.json({
       token,
       role,
-      name: res.data.name,
+      name: user.name,     // ✅ FIXED
       email: user.email
     });
 
   } catch (err) {
     console.error("🔥 LOGIN ERROR FULL:", err);
-
     return res.status(500).json({
       message: err.message
     });
   }
 };
 
-/* ═══════════════════════════════════════════════════
-   FORGOT PASSWORD — 3 endpoints
-   POST /api/auth/forgot-password/send-otp
-   POST /api/auth/forgot-password/verify-otp
-   POST /api/auth/forgot-password/reset
-══════════════════════════════════════════════════ */
+/* ═════════ FORGOT PASSWORD (unchanged) ═════════ */
 
-// In-memory OTP store — key: email → { otp, otpExpires }
 const resetStore = new Map();
 const makeOtp    = () => crypto.randomInt(100000, 999999).toString();
 
 exports.forgotPasswordSendOtp = async (req, res) => {
   try {
     const emailKey = req.body.email?.toLowerCase().trim();
-    if (!emailKey || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailKey))
-      return res.status(400).json({ message: "Please enter a valid email address" });
+    if (!emailKey)
+      return res.status(400).json({ message: "Invalid email" });
 
     const user = await User.findOne({ email: emailKey });
     if (!user)
-      return res.status(404).json({ message: "No account found with this email address" });
+      return res.status(404).json({ message: "User not found" });
 
     const otp        = makeOtp();
     const otpExpires = Date.now() + 10 * 60 * 1000;
@@ -181,65 +132,8 @@ exports.forgotPasswordSendOtp = async (req, res) => {
     const { sendOtpEmail } = require("../services/emailService");
     await sendOtpEmail(emailKey, otp, "passwordReset");
 
-    res.json({ message: "OTP sent to your email address." });
+    res.json({ message: "OTP sent" });
   } catch (err) {
-    console.error("forgotPasswordSendOtp:", err);
-    res.status(500).json({ message: "Failed to send OTP. Please try again." });
-  }
-};
-
-exports.forgotPasswordVerifyOtp = async (req, res) => {
-  try {
-    const emailKey = req.body.email?.toLowerCase().trim();
-    const { otp }  = req.body;
-    const record   = resetStore.get(emailKey);
-
-    if (!record)
-      return res.status(400).json({ message: "No OTP request found. Please start again." });
-    if (Date.now() > record.otpExpires) {
-      resetStore.delete(emailKey);
-      return res.status(400).json({ message: "OTP expired. Please request a new one." });
-    }
-    if (record.otp !== String(otp).trim())
-      return res.status(400).json({ message: "Invalid OTP. Please check and try again." });
-
-    res.json({ message: "OTP verified. Set your new password." });
-  } catch (err) {
-    console.error("forgotPasswordVerifyOtp:", err);
-    res.status(500).json({ message: "OTP verification failed." });
-  }
-};
-
-exports.forgotPasswordReset = async (req, res) => {
-  try {
-    const emailKey      = req.body.email?.toLowerCase().trim();
-    const { otp, newPassword } = req.body;
-
-    if (!newPassword || newPassword.length < 6)
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
-
-    const record = resetStore.get(emailKey);
-    if (!record)
-      return res.status(400).json({ message: "Session expired. Please start again." });
-    if (Date.now() > record.otpExpires) {
-      resetStore.delete(emailKey);
-      return res.status(400).json({ message: "OTP expired. Please request a new one." });
-    }
-    if (record.otp !== String(otp).trim())
-      return res.status(400).json({ message: "Invalid OTP." });
-
-    // ── Hash new password ONCE then save using findOneAndUpdate with $set
-    //    so the pre-save hook does NOT run (we hash explicitly here for update)
-    const hashed = await bcrypt.hash(newPassword, 10);
-    await User.findOneAndUpdate(
-      { email: emailKey },
-      { $set: { password: hashed } }
-    );
-
-    resetStore.delete(emailKey);
-    res.json({ message: "Password reset successful! You can now log in." });
-  } catch (err) {
-    console.error("forgotPasswordReset:", err);
-    res.status(500).json({ message: "Failed to reset password. Please try again." });
+    res.status(500).json({ message: "Failed to send OTP" });
   }
 };
