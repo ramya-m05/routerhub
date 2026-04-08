@@ -1,14 +1,9 @@
 const express = require("express");
-const router  = express.Router();
-const { createOrder, verifyPayment } = require("../controllers/paymentController");
-const { verifyToken } = require("../middleware/authMiddleware");
- 
+const router = express.Router();
 
-// Create Razorpay order — protected (must be logged in)
-router.post("/create-order", verifyToken, createOrder);
- 
-// Verify payment signature — protected
-router.post("/verify",       verifyToken, verifyPayment);
- 
+const paymentController = require("../controllers/paymentController");
+
+router.post("/create-order", paymentController.createOrder);
+router.post("/verify", paymentController.verifyPayment);
 
 module.exports = router;

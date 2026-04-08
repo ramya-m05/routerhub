@@ -1,52 +1,105 @@
-const handlePayment = async () => {
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
+
+/* ── Init Razorpay safely ── */
+const getRazorpay = () => {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    throw new Error("Razorpay credentials missing in .env");
+  }
+
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+};
+
+/* ═════════ CREATE ORDER ═════════ */
+exports.createOrder = async (req, res) => {
   try {
-    // 1️⃣ Create order from backend
-    const { data } = await API.post("/payment/create-order", {
-      amount: totalAmount,
+    console.log("CREATE ORDER HIT:", req.body);
+
+    const { amount } = req.body;
+
+    // ✅ Validation
+    if (!amount || isNaN(amount) || Number(amount) <= 0) {
+      return res.status(400).json({ message: "Invalid amount" });
+    }
+
+    const razorpay = getRazorpay();
+
+    const order = await razorpay.orders.create({
+      amount: Math.round(Number(amount) * 100), // paise
+      currency: "INR",
+      receipt: "rk_" + Date.now(),
+      notes: {
+        source: "RouterKart",
+      },
     });
 
-    console.log("ORDER DATA:", data);
+    console.log("ORDER CREATED:", order.id);
 
-    // 2️⃣ Razorpay options
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY,
-      amount: data.amount,
-      currency: data.currency,
-      order_id: data.id,
-
-      name: "RouterKart",
-      description: "Order Payment",
-
-      // ✅ Prefill (optional)
-      prefill: {
-        name: localStorage.getItem("userName") || "User",
-        email: JSON.parse(localStorage.getItem("user"))?.email || "",
-      },
-
-      handler: async function (response) {
-        console.log("PAYMENT SUCCESS:", response);
-
-        // ✅ Send ONLY correct fields (once)
-        await API.post("/payment/verify", {
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
-        });
-
-        alert("Payment successful 🎉");
-      },
-
-      theme: {
-        color: "#FEE12B",
-      },
-    };
-
-    // 3️⃣ Open Razorpay
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+    return res.json({
+      id: order.id,
+      amount: order.amount,
+      currency: order.currency,
+    });
 
   } catch (err) {
-    console.error("PAYMENT ERROR:", err.response?.data || err);
-    alert("Payment failed");
+    console.error("❌ CREATE ORDER ERROR:", err);
+
+    return res.status(500).json({
+      message: err.message || "Failed to create order",
+    });
+  }
+};
+
+/* ═════════ VERIFY PAYMENT ═════════ */
+exports.verifyPayment = async (req, res) => {
+  try {
+    console.log("VERIFY HIT:", req.body);
+
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+    } = req.body;
+
+    // ✅ Validation
+    if (
+      !razorpay_order_id ||
+      !razorpay_payment_id ||
+      !razorpay_signature
+    ) {
+      return res.status(400).json({
+        message: "Missing payment verification fields",
+      });
+    }
+
+    // ✅ Generate expected signature
+    const expectedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    // ❌ If mismatch
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json({
+        message: "Payment verification failed",
+      });
+    }
+
+    console.log("✅ PAYMENT VERIFIED");
+
+    return res.json({
+      success: true,
+      message: "Payment verified successfully",
+    });
+
+  } catch (err) {
+    console.error("❌ VERIFY ERROR:", err);
+
+    return res.status(500).json({
+      message: "Payment verification failed",
+    });
   }
 };
