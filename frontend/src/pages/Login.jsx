@@ -47,66 +47,63 @@ function Login() {
     }
   };
 
-  /* ── login ── */
-  const handleLogin = async () => {
-    // 🔥 VALIDATIONS
-    if (!email.trim()) {
-      toast.error("Please enter your email address");
-      return;
+ const handleLogin = async () => {
+  if (!email.trim()) {
+    toast.error("Please enter your email address");
+    return;
+  }
+
+  if (!isValidEmail(email)) {
+    setEmailErr("Please enter a valid email address (e.g. you@example.com)");
+    return;
+  }
+
+  if (!password.trim()) {
+    toast.error("Please enter your password");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const res = await API.post("/auth/login", {
+      email: email.trim().toLowerCase(),
+      password: password.trim(),
+    });
+
+    console.log("LOGIN RESPONSE:", res.data);
+
+    // ✅ Store safely
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("userName", res.data.name);
+    localStorage.setItem("role", res.data.role);
+
+    toast.success("Login successful 🚀");
+
+    // ✅ Redirect
+    if (res.data.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/store");
     }
 
-    if (!isValidEmail(email)) {
-      setEmailErr(
-        "Please enter a valid email address (e.g. you@example.com)"
-      );
-      return;
+  } catch (err) {
+    console.log("LOGIN ERROR:", err.response?.data || err);
+
+    const msg = err.response?.data?.message;
+
+    if (msg === "User not found") {
+      toast.error("No account found with this email ❌");
+    } else if (msg === "Incorrect password") {
+      toast.error("Wrong password ❌");
+    } else {
+      toast.error(msg || "Login failed. Please try again.");
     }
 
-    if (!password.trim()) {
-      toast.error("Please enter your password");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const res = await API.post("/auth/login", {
-        email: email.trim().toLowerCase(),
-        password: password.trim(), // ✅ FIX (important)
-      });
-
-      console.log("LOGIN RESPONSE:", res.data);
-
-      // ✅ STORE DATA
-      localStorage.setItem("token", res.data.token);
-localStorage.setItem("userName", res.data.name);
-localStorage.setItem("role", res.data.role);
-
-      toast.success("Login successful 🚀");
-
-      // ✅ REDIRECT
-     if (res.data.role === "admin") {
-  navigate("/admin");
-} else {
-  navigate("/store");
-}
-
-    } catch (err) {
-      console.log("LOGIN ERROR:", err.response?.data || err);
-
-      const msg = err.response?.data?.message;
-
-      if (msg === "User not found") {
-        toast.error("No account found with this email ❌");
-      } else if (msg === "Incorrect password") {
-        toast.error("Wrong password ❌");
-      } else {
-        toast.error(msg || "Login failed. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   /* ── shared styles ── */
   const inputBase = {

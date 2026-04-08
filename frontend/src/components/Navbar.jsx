@@ -216,7 +216,7 @@ function Navbar({ products = [] }) {
           {token && (
             <div style={{ display: "flex", alignItems: "center", gap: "14px", padding: "16px 20px" }}>
               <div style={{ ...s.profileAvatar, width: "44px", height: "44px", fontSize: "18px" }}>
-                {(localStorage.getItem("userName") || "U")[0].toUpperCase()}
+                {(localStorage.getItem("") || "U")[0].toUpperCase()}
               </div>
               <div>
                 <p style={{ fontWeight: "800", fontSize: "15px", color: "#111", margin: 0 }}>
