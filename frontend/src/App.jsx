@@ -1,5 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { useEffect, useState } from "react";
+
 import { getUser, getToken } from "./utils/auth";
 
 import { CartProvider } from "./context/CartContext";
@@ -27,8 +29,25 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminOrders from "./pages/AdminOrders";
 
 function App() {
-  const token = getToken();
-  const user = getUser();
+  const [token, setToken] = useState(getToken());
+  const [user, setUser] = useState(getUser());
+
+  // 🔥 KEY FIX: React updates after login
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setToken(getToken());
+      setUser(getUser());
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // Also trigger on mount (important)
+    handleStorageChange();
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   return (
     <CartProvider>
@@ -47,8 +66,6 @@ function App() {
               success: { iconTheme: { primary: "#FEE12B", secondary: "#111" } },
             }}
           />
-          {/* ── Routes ── */}
-        
 
           <Routes>
             {/* ── Public ── */}
@@ -59,7 +76,7 @@ function App() {
             {/* Login */}
             <Route
               path="/login"
-                element={
+              element={
                 token ? <Navigate to="/store" replace /> : <Login />
               }
             />
@@ -86,16 +103,40 @@ function App() {
             />
 
             {/* ── Protected ── */}
-            <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
-            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-            <Route path="/order-history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/wishlist" element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
+            <Route
+              path="/cart"
+              element={<ProtectedRoute><Cart /></ProtectedRoute>}
+            />
+            <Route
+              path="/checkout"
+              element={<ProtectedRoute><Checkout /></ProtectedRoute>}
+            />
+            <Route
+              path="/orders"
+              element={<ProtectedRoute><Orders /></ProtectedRoute>}
+            />
+            <Route
+              path="/order-history"
+              element={<ProtectedRoute><OrderHistory /></ProtectedRoute>}
+            />
+            <Route
+              path="/profile"
+              element={<ProtectedRoute><Profile /></ProtectedRoute>}
+            />
+            <Route
+              path="/wishlist"
+              element={<ProtectedRoute><Wishlist /></ProtectedRoute>}
+            />
 
             {/* ── Admin ── */}
-            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-            <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+            <Route
+              path="/admin"
+              element={<AdminRoute><AdminDashboard /></AdminRoute>}
+            />
+            <Route
+              path="/admin/orders"
+              element={<AdminRoute><AdminOrders /></AdminRoute>}
+            />
 
             {/* ── Fallback ── */}
             <Route
