@@ -57,6 +57,7 @@ exports.register = async (req, res) => {
     const existing = await User.findOne({ email: emailKey });
     if (existing)
       return res.status(400).json({ message: "This email is already registered. Please login." });
+  
 
     // ── Create user — pass PLAIN password, pre-save hook hashes it ──
     const user = await User.create({

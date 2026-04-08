@@ -1,17 +1,19 @@
+// routes/authRoutes.js
 const express = require("express");
-const router  = express.Router();
-const auth    = require("../controllers/authController");
+const router = express.Router();
+const auth = require("../controllers/authController");
 
-// ── Signup (OTP bypass version) ──────────────
+// ✅ KEEP REGISTER (no OTP)
 router.post("/register", auth.register);
-// router.post("/send-otp", auth.sendSignupOtp);
 
-// ── Login ───────────────────────────────────
+// ❌ DO NOT include send-otp (you removed it correctly)
+
+// ✅ LOGIN
 router.post("/login", auth.login);
 
-// ── Forgot Password ─────────────────────────
-router.post("/forgot-password/send-otp",   auth.forgotPasswordSendOtp);
+// ✅ FORGOT PASSWORD
+router.post("/forgot-password/send-otp", auth.forgotPasswordSendOtp);
 router.post("/forgot-password/verify-otp", auth.forgotPasswordVerifyOtp);
-router.post("/forgot-password/reset",      auth.forgotPasswordReset);
+router.post("/forgot-password/reset", auth.forgotPasswordReset);
 
 module.exports = router;

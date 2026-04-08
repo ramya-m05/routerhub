@@ -45,7 +45,7 @@ function Signup() {
   setLoading(true);
 
   try {
-    const res = await API.post("/auth/send-otp", {
+    const res = await API.post("/auth/register", {
       name: name.trim(),
       email: email.trim().toLowerCase(),
       password,
@@ -53,13 +53,11 @@ function Signup() {
 
     toast.success("Account created successfully");
 
-    // ✅ SAVE LOGIN
     localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    localStorage.setItem("userName", res.data.user.name || "User");
+    localStorage.setItem("userName", res.data.name);
+    localStorage.setItem("role", res.data.role);
 
-    // ✅ REDIRECT
-    res.data.user.role === "admin"
+    res.data.role === "admin"
       ? navigate("/admin")
       : navigate("/store");
 
