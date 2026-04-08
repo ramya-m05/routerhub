@@ -53,15 +53,19 @@ function Signup() {
 
     toast.success("Account created successfully");
 
+    // ✅ USE res ONLY INSIDE TRY
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("userName", res.data.name);
     localStorage.setItem("role", res.data.role);
 
-    res.data.role === "admin"
-      ? navigate("/admin")
-      : navigate("/store");
+    if (res.data.role === "admin") {
+      navigate("/admin");
+    } else {
+      navigate("/store");
+    }
 
   } catch (err) {
+    console.error("🔥 FRONTEND ERROR:", err);
     toast.error(err.response?.data?.message || "Signup failed");
   } finally {
     setLoading(false);

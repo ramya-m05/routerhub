@@ -50,19 +50,18 @@ const userSchema = new mongoose.Schema({
        Always pass the PLAIN TEXT password and let
        this hook do the hashing.
 ───────────────────────────────────────────────── */
-userSchema.pre("save", async function (next) {
-  // Only hash when password field was actually changed
-  if (!this.isModified("password")) return next();
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) return;
 
-  // Extra safety guard — if it already looks hashed, skip
-  // (this can happen with old data or migration scripts)
-  if (this.password.startsWith("$2b$") || this.password.startsWith("$2a$")) {
-    console.warn("⚠️  User pre-save: password looks already hashed — skipping re-hash for", this.email);
-    return next();
+  if (
+    this.password.startsWith("$2b$") ||
+    this.password.startsWith("$2a$")
+  ) {
+    console.warn("⚠️ Password already hashed:", this.email);
+    return;
   }
 
   this.password = await bcrypt.hash(this.password, 10);
-  next();
 });
 
 /* ─── Instance method for login comparison ── */

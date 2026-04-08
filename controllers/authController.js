@@ -43,49 +43,48 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // ── Basic validation ──
     if (!name?.trim())
       return res.status(400).json({ message: "Name is required" });
-    if (!email?.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return res.status(400).json({ message: "Please enter a valid email address" });
+
+    if (!email?.trim())
+      return res.status(400).json({ message: "Email is required" });
+
     if (!password || password.length < 6)
       return res.status(400).json({ message: "Password must be at least 6 characters" });
 
     const emailKey = email.toLowerCase().trim();
 
-    // ── Check for duplicate ──
     const existing = await User.findOne({ email: emailKey });
     if (existing)
-      return res.status(400).json({ message: "This email is already registered. Please login." });
-  
+      return res.status(400).json({ message: "Email already exists" });
 
-    // ── Create user — pass PLAIN password, pre-save hook hashes it ──
     const user = await User.create({
-      name:            name.trim(),
-      email:           emailKey,
-      password,          // ← plain text here, hashed once by User.js pre-save
-      role:            "user",
-      isEmailVerified: false,
-      addresses:       [],
-      orderCount:      0,
-      wishlistCount:   0,
+      name: name.trim(),
+      email: emailKey,
+      password,
     });
+    
+    console.log("USER CREATED:", user);
+    console.log("JWT SECRET:", process.env.JWT_SECRET);
 
-    const token = generateToken(user);
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
 
-    res.status(201).json({
+    return res.status(201).json({
       token,
-      role:    getRole(user),
-      name:    user.name,
-      email:   user.email,
-      message: "Account created successfully! Welcome to RouterKart 🎉",
+      name: user.name,
+      email: user.email,
     });
+
   } catch (err) {
-    console.error("register error:", err);
-    // Handle duplicate key at DB level (race condition)
-    if (err.code === 11000)
-      return res.status(400).json({ message: "This email is already registered. Please login." });
-    res.status(500).json({ message: "Registration failed. Please try again." });
+    console.error("🔥 REGISTER ERROR FULL:", err);
+    console.log("BODY RECEIVED:", req.body);
+    return res.status(500).json({
+      message: err.message,
+    });
   }
 };
 
