@@ -32,6 +32,8 @@ import About              from "./pages/About";
 import PrivacyPolicy      from "./pages/PrivacyPolicy";
 import TermsAndConditions from "./pages/TermsAndConditions";
 import Support            from "./pages/Support";
+import Refund             from "./pages/Refund";
+import Cancellation       from "./pages/Cancellation";  
 
 function App() {
   return (
