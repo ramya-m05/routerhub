@@ -44,18 +44,18 @@ exports.createProduct = async (req, res) => {
 
     const images = req.files?.map(file => file.path) || [];
 
-    const product = await Product.create({
-      name: name?.trim(),
-      category,
-      description: description?.trim() || "",
-      price: Number(price),
-      originalPrice: originalPrice ? Number(originalPrice) : null,
-      stock: Number(stock),
-      brand: brand?.trim() || "",
-      sku: sku?.trim() || "",
-      deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
-      images
-    });
+const product = await Product.create({
+  name: name?.trim(),
+  category,
+  description: description?.trim() || "",
+  price: Number(price),
+  originalPrice: originalPrice ? Number(originalPrice) : null,
+  stock: Number(stock),
+  brand: brand?.trim() || "",
+  sku: sku?.trim() || "",
+  deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
+  images
+});
 
     res.status(201).json(product);
 
@@ -75,30 +75,29 @@ exports.updateProduct = async (req, res) => {
 
     // ✅ Parse existing images
     let existingImages = [];
-    try {
-      existingImages = JSON.parse(req.body.existingImages || "[]");
-    } catch {
-      existingImages = [];
-    }
+try {
+  existingImages = JSON.parse(req.body.existingImages || "[]");
+} catch {
+  existingImages = [];
+}
 
-    // ✅ New uploaded images
-    const newImages = req.files?.map(file => file.path) || [];
+const newImages = req.files?.map(file => file.path) || [];
 
-    // ✅ FINAL MERGE (NO OVERWRITE)
-    const finalImages = [...existingImages, ...newImages];
+// FINAL MERGE
+const finalImages = [...existingImages, ...newImages];
 
-    const updateData = {
-      name: name?.trim(),
-      category,
-      description: description?.trim() || "",
-      price: Number(price),
-      originalPrice: originalPrice ? Number(originalPrice) : null,
-      stock: Number(stock),
-      brand: brand?.trim() || "",
-      sku: sku?.trim() || "",
-      deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
-      images: finalImages
-    };
+const updateData = {
+  name: name?.trim(),
+  category,
+  description: description?.trim() || "",
+  price: Number(price),
+  originalPrice: originalPrice ? Number(originalPrice) : null,
+  stock: Number(stock),
+  brand: brand?.trim() || "",
+  sku: sku?.trim() || "",
+  deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
+  images: finalImages
+};
 
     const updated = await Product.findByIdAndUpdate(
       req.params.id,
