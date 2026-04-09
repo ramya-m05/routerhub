@@ -42,7 +42,6 @@ exports.createProduct = async (req, res) => {
       originalPrice, stock, brand, sku, deliveryDays
     } = req.body;
 
-    // ✅ MULTIPLE IMAGES
     const images = req.files?.map(file => file.path) || [];
 
     const product = await Product.create({
@@ -55,7 +54,7 @@ exports.createProduct = async (req, res) => {
       brand: brand?.trim() || "",
       sku: sku?.trim() || "",
       deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
-      images // ✅ IMPORTANT
+      images
     });
 
     res.status(201).json(product);
@@ -82,10 +81,10 @@ exports.updateProduct = async (req, res) => {
       existingImages = [];
     }
 
-    // ✅ New images
+    // ✅ New uploaded images
     const newImages = req.files?.map(file => file.path) || [];
 
-    // ✅ Merge
+    // ✅ FINAL MERGE (NO OVERWRITE)
     const finalImages = [...existingImages, ...newImages];
 
     const updateData = {
@@ -98,7 +97,7 @@ exports.updateProduct = async (req, res) => {
       brand: brand?.trim() || "",
       sku: sku?.trim() || "",
       deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
-      images: finalImages // ✅ IMPORTANT
+      images: finalImages
     };
 
     const updated = await Product.findByIdAndUpdate(
