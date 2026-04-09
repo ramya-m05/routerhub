@@ -22,6 +22,8 @@ app.use(
       "https://www.routerkart.in",
       "https://routerkart.in"
     ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
