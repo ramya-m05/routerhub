@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar";
 import API from "../services/api";
 import ProductCarousel from "../components/ProductCarousel";
@@ -37,7 +38,7 @@ function Home() {
         borderBottom: "1px solid rgba(0,0,0,0.08)"
       }}>
         {[
-          { icon: "🚚", label: "Free Delivery", sub: "Orders ₹499+" },
+          { icon: "🚚", label: "Free Delivery", sub: "Orders ₹999+" },
           { icon: "🔒", label: "Secure Pay", sub: "100% encrypted" },
           { icon: "💯", label: "Genuine", sub: "Brand verified" },
           { icon: "⚡", label: "Fast Support", sub: "24/7 help" }
@@ -85,7 +86,7 @@ function Home() {
             Special Offer
           </h2>
           <p style={{ color: "#999", fontSize: isMobile ? "13px" : "15px", margin: 0, fontWeight: "500" }}>
-            Buy 10 routers <strong style={{ color: "#FEE12B" }}>Get 1 router free</strong>
+            Get up to <strong style={{ color: "#FEE12B" }}>₹1000 OFF</strong> on selected routers
           </p>
         </div>
         <div style={{ fontSize: isMobile ? "48px" : "80px", opacity: 0.15 }}>🔥</div>
@@ -107,30 +108,98 @@ function Home() {
       ))}
 
       {/* FOOTER */}
-      <footer style={{ marginTop: "40px", padding: isMobile ? "28px 20px" : "40px", background: "#111" }}>
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: isMobile ? "flex-start" : "center",
-          flexDirection: isMobile ? "column" : "row",
-          gap: "20px",
-          maxWidth: "1280px",
-          margin: "0 auto"
-        }}>
-          <div>
-            <h3 style={{ fontSize: "22px", fontWeight: "900", color: "white", letterSpacing: "-0.5px", margin: "0 0 4px" }}>
-              Router<span style={{ color: "#FEE12B" }}>Kart</span>
-            </h3>
-            <p style={{ color: "#666", fontSize: "13px", margin: 0 }}>India's trusted source for networking gear</p>
+      <footer style={{ marginTop: "40px", background: "#111", fontFamily: "'DM Sans', sans-serif" }}>
+        <div style={{ maxWidth: "1280px", margin: "0 auto", padding: isMobile ? "32px 20px 24px" : "44px 40px 28px" }}>
+
+          {/* TOP ROW */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexDirection: isMobile ? "column" : "row", gap: "32px", marginBottom: "32px" }}>
+
+            {/* Brand */}
+            <div style={{ maxWidth: "280px" }}>
+              <h3 style={{ fontSize: "22px", fontWeight: "900", color: "white", letterSpacing: "-0.5px", margin: "0 0 6px" }}>
+                Router<span style={{ color: "#FEE12B" }}>Kart</span>
+              </h3>
+              <p style={{ color: "#555", fontSize: "13px", margin: "0 0 16px", lineHeight: 1.6 }}>India's trusted source for networking gear — routers, fiber tools, security systems and more.</p>
+              <a href="mailto:admin@routerkart.in" style={{ color: "#FEE12B", textDecoration: "none", fontSize: "13px", fontWeight: "700" }}>admin@routerkart.in</a>
+            </div>
+
+            {/* Links grid */}
+            <div style={{ display: "flex", gap: isMobile ? "24px" : "48px", flexWrap: "wrap" }}>
+              <div>
+                <p style={{ color: "white", fontWeight: "800", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", margin: "0 0 12px" }}>Shop</p>
+                {[
+                  { label: "All Products", to: "/store" },
+                  { label: "Routers",      to: "/store?category=Router" },
+                  { label: "Fiber Cables", to: "/store?category=Fiber+Cable" },
+                  { label: "Security",     to: "/store?category=Security" },
+                ].map(l => (
+                  <Link key={l.label} to={l.to} style={{ display: "block", color: "#555", textDecoration: "none", fontSize: "13px", fontWeight: "500", marginBottom: "8px", transition: "color 0.15s" }}
+                    onMouseEnter={e => e.target.style.color = "#FEE12B"} onMouseLeave={e => e.target.style.color = "#555"}>
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+              <div>
+                <p style={{ color: "white", fontWeight: "800", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", margin: "0 0 12px" }}>Company</p>
+                {[
+                  { label: "About Us",   to: "/about" },
+                  { label: "Privacy",    to: "/privacy" },
+                  { label: "Terms",      to: "/terms" },
+                  { label: "Support",    to: "/support" },
+                ].map(l => (
+                  <Link key={l.label} to={l.to} style={{ display: "block", color: "#555", textDecoration: "none", fontSize: "13px", fontWeight: "500", marginBottom: "8px", transition: "color 0.15s" }}
+                    onMouseEnter={e => e.target.style.color = "#FEE12B"} onMouseLeave={e => e.target.style.color = "#555"}>
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+              <div>
+                <p style={{ color: "white", fontWeight: "800", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", margin: "0 0 12px" }}>Account</p>
+                {[
+                  { label: "My Orders",  to: "/orders" },
+                  { label: "My Profile", to: "/profile" },
+                  { label: "Wishlist",   to: "/wishlist" },
+                  { label: "Cart",       to: "/cart" },
+                ].map(l => (
+                  <Link key={l.label} to={l.to} style={{ display: "block", color: "#555", textDecoration: "none", fontSize: "13px", fontWeight: "500", marginBottom: "8px", transition: "color 0.15s" }}
+                    onMouseEnter={e => e.target.style.color = "#FEE12B"} onMouseLeave={e => e.target.style.color = "#555"}>
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
-            {["About", "Privacy", "Terms", "Support"].map(link => (
-              <a key={link} href="#" style={{ color: "#666", textDecoration: "none", fontSize: "13px", fontWeight: "500" }}>{link}</a>
+
+          {/* TRUST BADGES */}
+          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", paddingBottom: "24px", borderBottom: "1px solid #1e1e1e" }}>
+            {[
+              "🚚 Free delivery on ₹999+",
+              "🔒 Secure Razorpay checkout",
+              "✅ Genuine products",
+              "🔄 7-day returns",
+              "💬 WhatsApp support",
+            ].map((t, i) => (
+              <span key={i} style={{ fontSize: "12px", fontWeight: "600", color: "#444", padding: "5px 12px", borderRadius: "20px", border: "1px solid #222" }}>{t}</span>
             ))}
           </div>
-        </div>
-        <div style={{ borderTop: "1px solid #222", marginTop: "24px", paddingTop: "16px", textAlign: "center", maxWidth: "1280px", margin: "24px auto 0" }}>
-          <p style={{ color: "#444", fontSize: "12px", margin: 0 }}>© 2026 RouterKart. All rights reserved.</p>
+
+          {/* BOTTOM ROW */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexDirection: isMobile ? "column" : "row", gap: "12px", paddingTop: "20px" }}>
+            <p style={{ color: "#333", fontSize: "12px", margin: 0 }}>© 2026 RouterKart. All rights reserved.</p>
+            <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
+              {[
+                { label: "Privacy",      to: "/privacy" },
+                { label: "Terms",        to: "/terms" },
+                { label: "Refund",       to: "/terms#refund-policy" },
+                { label: "Cancellation", to: "/terms#cancellation-policy" },
+              ].map(l => (
+                <Link key={l.label} to={l.to} style={{ color: "#333", textDecoration: "none", fontSize: "12px", fontWeight: "600" }}
+                  onMouseEnter={e => e.target.style.color = "#FEE12B"} onMouseLeave={e => e.target.style.color = "#333"}>
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </footer>
     </div>

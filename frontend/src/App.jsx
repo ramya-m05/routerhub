@@ -1,54 +1,39 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import { useEffect, useState } from "react";
 
-import { getUser, getToken } from "./utils/auth";
-
-import { CartProvider } from "./context/CartContext";
+import { CartProvider }     from "./context/CartContext";
 import { WishlistProvider } from "./context/WishlistContext";
 
 import ProtectedRoute from "./components/ProtectedRoute";
-import AdminRoute from "./components/AdminRoute";
+import AdminRoute     from "./components/AdminRoute";
 import WhatsAppButton from "./components/WhatsAppButton";
 
-import Home from "./pages/Home";
-import Store from "./pages/Store";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
+// Main pages
+import Home           from "./pages/Home";
+import Store          from "./pages/Store";
+import Login          from "./pages/Login";
+import Signup         from "./pages/Signup";
 import ForgotPassword from "./pages/ForgotPassword";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import Orders from "./pages/Orders";
-import OrderHistory from "./pages/OrderHistory";
-import Profile from "./pages/Profile";
-import Wishlist from "./pages/Wishlist";
+import Cart           from "./pages/Cart";
+import Checkout       from "./pages/Checkout";
+import Orders         from "./pages/Orders";
+import OrderHistory   from "./pages/OrderHistory";
+import Profile        from "./pages/Profile";
+import Wishlist       from "./pages/Wishlist";
 import ProductDetails from "./pages/ProductDetails";
 
-import AdminLogin from "./pages/AdminLogin";
+// Admin pages
+import AdminLogin     from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminOrders from "./pages/AdminOrders";
+import AdminOrders    from "./pages/AdminOrders";
+
+// Info pages
+import About              from "./pages/About";
+import PrivacyPolicy      from "./pages/PrivacyPolicy";
+import TermsAndConditions from "./pages/TermsAndConditions";
+import Support            from "./pages/Support";
 
 function App() {
-  const [token, setToken] = useState(getToken());
-  const [user, setUser] = useState(getUser());
-
-  // 🔥 KEY FIX: React updates after login
-  useEffect(() => {
-    const handleStorageChange = () => {
-      setToken(getToken());
-      setUser(getUser());
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-
-    // Also trigger on mount (important)
-    handleStorageChange();
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-    };
-  }, []);
-
   return (
     <CartProvider>
       <WishlistProvider>
@@ -69,86 +54,38 @@ function App() {
 
           <Routes>
             {/* ── Public ── */}
-            <Route path="/" element={<Home />} />
-            <Route path="/store" element={<Store />} />
-            <Route path="/product/:id" element={<ProductDetails />} />
-
-            {/* Login */}
-            <Route
-              path="/login"
-              element={
-                token ? <Navigate to="/store" replace /> : <Login />
-              }
-            />
-
-            {/* Signup */}
-            <Route
-              path="/signup"
-              element={
-                token ? <Navigate to="/store" replace /> : <Signup />
-              }
-            />
-
-            {/* Forgot Password */}
+            <Route path="/"                element={<Home />} />
+            <Route path="/store"           element={<Store />} />
+            <Route path="/product/:id"     element={<ProductDetails />} />
+            <Route path="/login"           element={<Login />} />
+            <Route path="/signup"          element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/admin/login"     element={<AdminLogin />} />
 
-            {/* Admin Login */}
-            <Route
-              path="/admin/login"
-              element={
-                token && user?.role === "admin"
-                  ? <Navigate to="/admin" replace />
-                  : <AdminLogin />
-              }
-            />
+            {/* ── Info pages (public) ── */}
+            <Route path="/about"   element={<About />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms"   element={<TermsAndConditions />} />
+            <Route path="/support" element={<Support />} />
+            <Route path="/refund" element={<Refund />} />
+<Route path="/cancellation" element={<Cancellation />} />
+            {/* ── Protected user routes ── */}
+            <Route path="/cart"          element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+            <Route path="/checkout"      element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+            <Route path="/orders"        element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/order-history" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
+            <Route path="/profile"       element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/wishlist"      element={<ProtectedRoute><Wishlist /></ProtectedRoute>} />
 
-            {/* ── Protected ── */}
-            <Route
-              path="/cart"
-              element={<ProtectedRoute><Cart /></ProtectedRoute>}
-            />
-            <Route
-              path="/checkout"
-              element={<ProtectedRoute><Checkout /></ProtectedRoute>}
-            />
-            <Route
-              path="/orders"
-              element={<ProtectedRoute><Orders /></ProtectedRoute>}
-            />
-            <Route
-              path="/order-history"
-              element={<ProtectedRoute><OrderHistory /></ProtectedRoute>}
-            />
-            <Route
-              path="/profile"
-              element={<ProtectedRoute><Profile /></ProtectedRoute>}
-            />
-            <Route
-              path="/wishlist"
-              element={<ProtectedRoute><Wishlist /></ProtectedRoute>}
-            />
-
-            {/* ── Admin ── */}
-            <Route
-              path="/admin"
-              element={<AdminRoute><AdminDashboard /></AdminRoute>}
-            />
-            <Route
-              path="/admin/orders"
-              element={<AdminRoute><AdminOrders /></AdminRoute>}
-            />
+            {/* ── Admin routes ── */}
+            <Route path="/admin"        element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
 
             {/* ── Fallback ── */}
-            <Route
-              path="*"
-              element={
-                token
-                  ? <Navigate to="/store" replace />
-                  : <Navigate to="/" replace />
-              }
-            />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
 
+          {/* Floating WhatsApp button on every page */}
           <WhatsAppButton />
         </Router>
       </WishlistProvider>
