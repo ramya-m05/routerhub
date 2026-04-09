@@ -37,20 +37,24 @@ exports.createProduct = async (req, res) => {
       originalPrice, stock, brand, sku, deliveryDays
     } = req.body;
 
+    // ✅ handle multiple images
+    const images = req.files?.map(file => file.path) || [];
+
     const product = await Product.create({
-      name:          name?.trim(),
+      name: name?.trim(),
       category,
-      description:   description?.trim() || "",
-      price:         Number(price),
+      description: description?.trim() || "",
+      price: Number(price),
       originalPrice: originalPrice ? Number(originalPrice) : null,
-      stock:         Number(stock),
-      image:         req.file?.path || "",
-      brand:         brand?.trim() || "",
-      sku:           sku?.trim() || "",
-      deliveryDays:  deliveryDays ? Number(deliveryDays) : 5
+      stock: Number(stock),
+      images, // ✅ FIXED
+      brand: brand?.trim() || "",
+      sku: sku?.trim() || "",
+      deliveryDays: deliveryDays ? Number(deliveryDays) : 5
     });
 
     res.status(201).json(product);
+
   } catch (err) {
     console.error("CREATE PRODUCT ERROR:", err);
     res.status(500).json({ message: err.message });
@@ -77,7 +81,9 @@ exports.updateProduct = async (req, res) => {
       deliveryDays:  deliveryDays ? Number(deliveryDays) : 5
     };
 
-    if (req.file) updateData.image = req.file.path;
+    if (req.files && req.files.length > 0) {
+  updateData.images = req.files.map(file => file.path);
+}
 
     const updated = await Product.findByIdAndUpdate(
       req.params.id,
