@@ -20,6 +20,13 @@ exports.createOrder = async (req, res) => {
 
     const { amount } = req.body;
 
+    // amout type
+    console.log("AMOUNT TYPE:", {
+  raw: amount,
+  type: typeof amount,
+  parsed: Number(amount),
+});
+
     // ✅ Validation
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
@@ -52,7 +59,6 @@ exports.createOrder = async (req, res) => {
     });
   }
 };
-
 /* ═════════ VERIFY PAYMENT ═════════ */
 exports.verifyPayment = async (req, res) => {
   try {
