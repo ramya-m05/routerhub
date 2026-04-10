@@ -71,6 +71,7 @@ function App() {
             <Route path="/support" element={<Support />} />
             <Route path="/refund" element={<Refund />} />
 <Route path="/cancellation" element={<Cancellation />} />
+            <Route path="/contact" element={<Contact />} />
             {/* ── Protected user routes ── */}
             <Route path="/cart"          element={<ProtectedRoute><Cart /></ProtectedRoute>} />
             <Route path="/checkout"      element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
