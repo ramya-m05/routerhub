@@ -26,46 +26,39 @@ function Checkout() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [addresses, setAddresses] = useState([]);
+
   const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const delivery = subtotal >= 999 ? 0 : 49;
   const grandTotal = subtotal + delivery;
   const codOnDelivery = grandTotal - COD_ADVANCE;
 
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      try {
+        const res = await API.get("/users/addresses");
+        setAddresses(res.data);
+        console.log("Fetched addresses:", res.data);
+      } catch (err) {
+        console.error("Failed to fetch addresses:", err);
+      }
+    };
+    fetchAddresses();
+  }, []);
 
   useEffect(() => {
-  const fetchAddresses = async () => {
-    try {
-      const res = await API.get("/users/addresses");
-      setAddresses(res.data);
-      console.log("Fetched addresses:", res.data);
-    } catch (err) {
-      console.error("Failed to fetch addresses:", err);
-    }
-  };
+    if (!addresses || addresses.length === 0) return;
+    const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
+    if (!defaultAddress) return;
+    setDoorNo(defaultAddress.doorNo || "");
+    setHouseName(defaultAddress.houseName || "");
+    setCross(defaultAddress.cross || "");
+    setLandmark(defaultAddress.landmark || "");
+    setCity(defaultAddress.city || "");
+    setDistrict(defaultAddress.district || "");
+    setPincode(defaultAddress.pincode || "");
+    setPhone(defaultAddress.phone || "");
+  }, [addresses]);
 
-  fetchAddresses();
-}, []);
-useEffect(() => {
-  if (!addresses || addresses.length === 0) return;
-
-  const defaultAddress =
-    addresses.find(a => a.isDefault) || addresses[0];
-
-  if (!defaultAddress) return;
-
-  setDoorNo(defaultAddress.doorNo || "");
-  setHouseName(defaultAddress.houseName || "");
-  setCross(defaultAddress.cross || "");
-  setLandmark(defaultAddress.landmark || "");
-  setCity(defaultAddress.city || "");
-  setDistrict(defaultAddress.district || "");
-  setPincode(defaultAddress.pincode || "");
-  setPhone(defaultAddress.phone || "");
-
-}, [addresses]);
-
-
-  // Build full address string for backend
   const buildAddress = () => {
     const parts = [
       doorNo && `${doorNo}`,
@@ -92,135 +85,140 @@ useEffect(() => {
   };
 
   const placeOrder = async () => {
-  if (!validate()) return;
+    if (!validate()) return;
 
-  setLoading(true);
-  console.log("RAZORPAY KEY:", import.meta.env.VITE_RAZORPAY_KEY);
+    setLoading(true);
+    console.log("RAZORPAY KEY:", import.meta.env.VITE_RAZORPAY_KEY);
 
-  try {
-    const user = JSON.parse(localStorage.getItem("user"));
+    try {
+      const user = JSON.parse(localStorage.getItem("user")) || {};
 
-    const fullAddress = buildAddress();
-    const amount = paymentMode === "cod" ? COD_ADVANCE : grandTotal;
+      const fullAddress = buildAddress();
+      const amount = paymentMode === "cod" ? COD_ADVANCE : grandTotal;
 
-    const { data } = await API.post("/payment/create-order", { amount });
+      const { data } = await API.post("/payment/create-order", { amount });
 
-    console.log("ORDER DATA:", data);
+      console.log("ORDER DATA:", data);
 
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY,
-      amount: data.amount,
-      currency: "INR",
-      name: "RouterKart",
-      description:
-        paymentMode === "cod"
-          ? `COD Advance — ₹${COD_ADVANCE}`
-          : "Order Payment",
-      order_id: data.id,
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY,
+        amount: data.amount,
+        currency: "INR",
+        name: "RouterKart",
+        description:
+          paymentMode === "cod"
+            ? `COD Advance — ₹${COD_ADVANCE}`
+            : "Order Payment",
+        order_id: data.id,
 
-      // ✅ PREFILL FIX
-      prefill: {
-        name: user?.name || "Customer",
-        email: user?.email || "",
-      },
-
-      // ✅ SUCCESS HANDLER
-      handler: async (response) => {
-        try {
-          console.log("PAYMENT SUCCESS:", response);
-
-          // 🔥 VERIFY PAYMENT
-          const verifyRes = await API.post("/payment/verify", {
-            razorpay_order_id: response.razorpay_order_id,
-            razorpay_payment_id: response.razorpay_payment_id,
-            razorpay_signature: response.razorpay_signature,
-          });
-
-          if (!verifyRes.data?.verified) {
-            throw new Error("Verification failed");
-          }
-
-          // 🔥 CREATE ORDER
-          await API.post("/orders", {
-            items: cart.map((i) => ({
-              productId: i._id,
-              name: i.name,
-              price: i.price,
-              qty: i.qty,
-            })),
-            address: fullAddress,
-            addressDetails: {
-              doorNo,
-              houseName,
-              cross,
-              landmark,
-              city,
-              district,
-              pincode,
-            },
-            phone,
-            paymentMode,
-            email: user?.email,
-
-            ...(paymentMode === "cod" && {
-              advancePaid: COD_ADVANCE,
-              amountDueOnDelivery: codOnDelivery,
-              paymentStatus: "advance_paid",
-            }),
-
-            ...(paymentMode === "online" && {
-              paymentStatus: "paid",
-            }),
-          });
-
-          // ✅ CLEANUP
-          clearCart();
-
-          toast.success(
-            paymentMode === "cod"
-              ? `Order placed! ₹${codOnDelivery.toLocaleString()} due on delivery 🎉`
-              : "Payment successful! 🎉"
-          );
-
-          navigate("/orders");
-        } catch (err) {
-          console.log("VERIFY ERROR:", err.response?.data || err);
-          toast.error("Payment verification failed");
-        }
-      },
-
-      // ✅ CANCEL HANDLER
-      modal: {
-        ondismiss: function () {
-          console.log("Payment popup closed");
-          toast.error("Payment cancelled");
+        // ✅ FIX: contact uses validated phone from form
+        prefill: {
+          name: user?.name || "Customer",
+          email: user?.email || "test@routerkart.in",
+          contact: phone?.replace(/\D/g, "").slice(-10) || "9999999999",
         },
-      },
-    };
 
-    const rzp = new window.Razorpay(options);
+        method: {
+          netbanking: true,
+          card: true,
+          upi: true,
+          wallet: false,
+          emi: false,
+        },
 
-    // ✅ FAILURE HANDLER
-    rzp.on("payment.failed", function (response) {
-      console.log("PAYMENT FAILED:", response.error);
+        handler: async (response) => {
+          try {
+            console.log("PAYMENT SUCCESS:", response);
 
-      toast.error(
-        response.error?.description || "Payment failed. Please try again."
-      );
-    });
+            const verifyRes = await API.post("/payment/verify", {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
 
-    rzp.open();
+            if (!verifyRes.data?.verified) {
+              throw new Error("Verification failed");
+            }
 
-  } catch (err) {
-    console.log("PAYMENT ERROR:", err.response?.data || err);
+            await API.post("/orders", {
+              items: cart.map((i) => ({
+                productId: i._id,
+                name: i.name,
+                price: i.price,
+                qty: i.qty,
+              })),
+              address: fullAddress,
+              addressDetails: {
+                doorNo,
+                houseName,
+                cross,
+                landmark,
+                city,
+                district,
+                pincode,
+              },
+              phone,
+              paymentMode,
+              email: user?.email || "test@routerkart.in",
 
-    toast.error(err.response?.data?.message || "Payment failed");
-  } finally {
-    setLoading(false);
-  }
+              ...(paymentMode === "cod" && {
+                advancePaid: COD_ADVANCE,
+                amountDueOnDelivery: codOnDelivery,
+                paymentStatus: "advance_paid",
+              }),
 
-  console.log("TOKEN:", localStorage.getItem("token"));
-};
+              ...(paymentMode === "online" && {
+                paymentStatus: "paid",
+              }),
+            });
+
+            clearCart();
+
+            toast.success(
+              paymentMode === "cod"
+                ? `Order placed! ₹${codOnDelivery.toLocaleString()} due on delivery 🎉`
+                : "Payment successful! 🎉"
+            );
+
+            navigate("/orders");
+          } catch (err) {
+            console.log("VERIFY ERROR:", err.response?.data || err);
+            toast.error("Payment verification failed");
+          }
+        },
+
+        modal: {
+          ondismiss: function () {
+            console.log("Payment popup closed");
+            toast.error("Payment cancelled");
+          },
+        },
+
+        theme: {
+          color: "#FEE12B",
+        },
+      };
+
+      console.log("OPTIONS:", options);
+
+      const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", function (response) {
+        console.log("PAYMENT FAILED:", response.error);
+        toast.error(response.error?.description || "Payment failed. Please try again.");
+      });
+
+      rzp.open();
+
+    } catch (err) {
+      console.log("PAYMENT ERROR:", err.response?.data || err);
+      toast.error(err.response?.data?.message || "Payment failed");
+    } finally {
+      setLoading(false);
+    }
+
+    console.log("TOKEN:", localStorage.getItem("token"));
+  };
 
   const inp = {
     width: "100%", padding: "12px 14px", border: "2px solid #e5e5e5",
@@ -409,7 +407,7 @@ useEffect(() => {
               {cart.map(item => (
                 <div key={item._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "8px" }}>
                   <div style={{ display: "flex", gap: "10px", alignItems: "center", minWidth: 0 }}>
-                    <img src={item.image} alt={item.name} style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px", border: "1px solid #f0f0f0", flexShrink: 0 }} />
+                    <img src={item.image || undefined} alt={item.name} style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "6px", border: "1px solid #f0f0f0", flexShrink: 0 }} />
                     <div style={{ minWidth: 0 }}>
                       <p style={{ fontWeight: "700", fontSize: "12px", color: "#111", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "120px" }}>{item.name}</p>
                       <p style={{ fontSize: "11px", color: "#aaa", margin: 0 }}>Qty: {item.qty}</p>
@@ -449,6 +447,28 @@ useEffect(() => {
               <span style={{ fontWeight: "900", fontSize: "17px" }}>Total</span>
               <span style={{ fontWeight: "900", fontSize: "21px", letterSpacing: "-0.5px" }}>₹{grandTotal.toLocaleString()}</span>
             </div>
+
+            {/* ✅ NETBANKING WARNING BANNER — correctly inside JSX return */}
+            {paymentMode !== "cod" && (
+              <div style={{
+                background: "#fff8e1",
+                border: "1px solid #FEE12B",
+                borderRadius: "8px",
+                padding: "10px 14px",
+                fontSize: "13px",
+                color: "#7a6000",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "8px",
+              }}>
+                <span style={{ fontSize: "16px" }}>⚠️</span>
+                <span>
+                  Some netbanking options may be unavailable. Please use{" "}
+                  <strong>UPI or Card</strong> for the best experience.
+                </span>
+              </div>
+            )}
 
             <button
               onClick={placeOrder}
