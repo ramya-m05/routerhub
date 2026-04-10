@@ -26,7 +26,7 @@ Backend:
 Backend:
 
 npm install  
-node backend/server.js
+node server.js
 
 Frontend:
 
