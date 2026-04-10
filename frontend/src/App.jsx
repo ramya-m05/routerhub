@@ -34,7 +34,7 @@ import TermsAndConditions from "./pages/TermsAndConditions";
 import Support            from "./pages/Support";
 import Refund             from "./pages/Refund";
 import Cancellation       from "./pages/Cancellation";  
-
+import Contact            from "./pages/ContactUs";
 function App() {
   return (
     <CartProvider>
