@@ -83,8 +83,7 @@ function Checkout() {
     if (paymentMode === "cod" && !codConfirmed) { toast.error("Please confirm COD advance payment terms"); return false; }
     return true;
   };
-
-  const placeOrder = async () => {
+const placeOrder = async () => {
   if (!validate()) return;
 
   setLoading(true);
@@ -93,53 +92,48 @@ function Checkout() {
     const user = JSON.parse(localStorage.getItem("user")) || {};
     const fullAddress = buildAddress();
 
-    // ✅ FIX: ensure number
-    const amount = paymentMode === "cod"
-      ? Number(COD_ADVANCE)
-      : Number(grandTotal);
+    const amount =
+      paymentMode === "cod"
+        ? Number(COD_ADVANCE)
+        : Number(grandTotal);
 
     console.log("FRONTEND AMOUNT:", amount, typeof amount);
 
-    // ✅ CREATE ORDER (backend)
-    const { data } = await API.post("/payment/create-order", {
-      amount
-    });
+    const { data } = await API.post("/payment/create-order", { amount });
 
     console.log("ORDER DATA:", data);
-    console.log("LIVE KEY:", import.meta.env.VITE_RAZORPAY_KEY);
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
-
       amount: data.amount,
       currency: data.currency,
       order_id: data.id,
 
       name: "RouterKart",
-      description:
-        paymentMode === "cod"
-          ? `COD Advance — ₹${COD_ADVANCE}`
-          : "Order Payment",
+      description: "Order Payment",
 
-      // ✅ FIXED PREFILL
       prefill: {
         name: user?.name || "Customer",
         email: user?.email || "test@routerkart.in",
-        contact: (phone || "9999999999")
-          .toString()
-          .replace(/\D/g, "")
-          .slice(-10),
+        contact:
+          phone?.toString().replace(/\D/g, "").slice(-10) ||
+          "9999999999",
+      },
+
+      notes: {
+        address: "RouterKart Order",
       },
 
       theme: {
         color: "#FEE12B",
       },
 
+      // ✅ EVERYTHING HAPPENS INSIDE HANDLER
       handler: async function (response) {
         try {
           console.log("PAYMENT SUCCESS:", response);
 
-          // ✅ VERIFY PAYMENT
+          // ✅ VERIFY
           const verifyRes = await API.post("/payment/verify", {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
@@ -150,7 +144,7 @@ function Checkout() {
             throw new Error("Verification failed");
           }
 
-          // ✅ CREATE FINAL ORDER
+          // ✅ CREATE ORDER
           await API.post("/orders", {
             items: cart.map((i) => ({
               productId: i._id,
@@ -188,12 +182,7 @@ function Checkout() {
 
           clearCart();
 
-          toast.success(
-            paymentMode === "cod"
-              ? `Order placed! ₹${codOnDelivery.toLocaleString()} due on delivery 🎉`
-              : "Payment successful! 🎉"
-          );
-
+          toast.success("Payment successful 🎉");
           navigate("/orders");
 
         } catch (err) {
@@ -227,7 +216,6 @@ function Checkout() {
     setLoading(false);
   }
 };
-
   const inp = {
     width: "100%", padding: "12px 14px", border: "2px solid #e5e5e5",
     borderRadius: "8px", fontSize: "14px", color: "#111", background: "white",

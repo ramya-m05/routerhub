@@ -39,7 +39,9 @@ exports.createOrder = async (req, res) => {
       currency: "INR",
       receipt: "rk_" + Date.now(),
       notes: {
-        source: "RouterKart",
+        address: "RouterKart Order"},
+        theme: { 
+          color:"#FEE12B"
       },
     });
 
