@@ -16,20 +16,19 @@ const getRazorpay = () => {
 /* ═════════ CREATE ORDER ═════════ */
 exports.createOrder = async (req, res) => {
   try {
-    console.log("CREATE ORDER HIT:", req.body);
-
     const { amount } = req.body;
 
-    // amout type
-    console.log("AMOUNT TYPE:", {
-  raw: amount,
-  type: typeof amount,
-  parsed: Number(amount),
-});
-console.log("ENV CHECK:", {
-  key: process.env.RAZORPAY_KEY_ID,
-  secret: process.env.RAZORPAY_KEY_SECRET ? "present" : "missing",
-});
+    console.log("ENV CHECK:", {
+      key: process.env.RAZORPAY_KEY_ID,
+      secret: process.env.RAZORPAY_KEY_SECRET ? "present" : "missing",
+    });
+
+    console.log("AMOUNT DEBUG:", {
+      raw: amount,
+      type: typeof amount,
+      parsed: Number(amount),
+    });
+
     // ✅ Validation
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
@@ -38,30 +37,18 @@ console.log("ENV CHECK:", {
     const razorpay = getRazorpay();
 
     const order = await razorpay.orders.create({
-      amount: Math.round(Number(amount) * 100), // paise
+      amount: Math.round(Number(amount) * 100),
       currency: "INR",
       receipt: "rk_" + Date.now(),
-      notes: {
-        address: "RouterKart Order"},
-        theme: { 
-          color:"#FEE12B"
-      },
     });
 
-    console.log("ORDER CREATED:", order.id);
-
-    return res.json({
-      id: order.id,
-      amount: order.amount,
-      currency: order.currency,
-    });
+    return res.json(order);
 
   } catch (err) {
     console.error("❌ CREATE ORDER ERROR:", err);
-    console.log("ENV CHECK:", {
-  key: process.env.RAZORPAY_KEY_ID,
-  secret: process.env.RAZORPAY_KEY_SECRET ? "present" : "missing"
-});
+    return res.status(500).json({ message: err.message });
+  }
+};
 
     return res.status(500).json({
       message: err.message || "Failed to create order",
