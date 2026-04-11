@@ -81,12 +81,13 @@ function Orders() {
                     style={styles.orderHeader}
                     onClick={() => setExpandedId(isExpanded ? null : order._id)}
                   >
-                    <img
-                      src={order.items?.[0]?.image || ""}
-                      alt=""
-                      style={styles.orderThumb}
-                      onError={e => (e.target.style.display = "none")}
-                    />
+                    {order.items?.[0]?.image ? (
+  <img
+    src={order.items[0].image}
+    alt=""
+    style={styles.orderThumb}
+  />
+) : null}
 
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap", marginBottom: "4px" }}>
@@ -129,12 +130,13 @@ function Orders() {
                       <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
                         {order.items?.map((item, i) => (
                           <div key={i} style={styles.detailItem}>
-                            <img
-                              src={item.image || ""}
-                              alt={item.name}
-                              style={styles.detailImg}
-                              onError={e => (e.target.style.display = "none")}
-                            />
+                            {item.image ? (
+  <img
+    src={item.image || "/placeholder.png" }
+    alt={item.name}
+    style={styles.detailImg}
+  />
+) : null}
                             <div style={{ flex: 1 }}>
                               <p style={{ fontWeight: "700", fontSize: "14px", color: "#111", margin: "0 0 2px" }}>{item.name}</p>
                               <p style={{ fontSize: "12px", color: "#aaa", margin: 0 }}>Qty: {item.qty} × ₹{item.price?.toLocaleString()}</p>
