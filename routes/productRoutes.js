@@ -17,6 +17,7 @@ const upload = require("../middleware/upload");
 // PUBLIC
 router.get("/", getProducts);
 router.get("/:id", getProduct);
+router.get("/:id/reviews", getReviews);
 
 // ADMIN
 router.post("/", verifyToken, isAdmin, upload.array("images", 6), createProduct);

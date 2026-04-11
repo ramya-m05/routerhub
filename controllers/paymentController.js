@@ -55,6 +55,10 @@ exports.createOrder = async (req, res) => {
 
   } catch (err) {
     console.error("❌ CREATE ORDER ERROR:", err);
+    console.log("ENV CHECK:", {
+  key: process.env.RAZORPAY_KEY_ID,
+  secret: process.env.RAZORPAY_KEY_SECRET ? "present" : "missing"
+});
 
     return res.status(500).json({
       message: err.message || "Failed to create order",

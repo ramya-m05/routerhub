@@ -154,3 +154,7 @@ exports.deleteProduct = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.getReviews = async (req, res) => {
+  res.json([]); // temporary safe fix
+};

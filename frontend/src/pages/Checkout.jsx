@@ -102,7 +102,7 @@ const placeOrder = async () => {
     const { data } = await API.post("/payment/create-order", { amount });
 
     console.log("ORDER DATA:", data);
-
+    
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: data.amount,
@@ -127,6 +127,7 @@ const placeOrder = async () => {
       theme: {
         color: "#FEE12B",
       },
+      
 
       // ✅ EVERYTHING HAPPENS INSIDE HANDLER
       handler: async function (response) {
