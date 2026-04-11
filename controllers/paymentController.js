@@ -6,6 +6,7 @@ const getRazorpay = () => {
   if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
     throw new Error("Razorpay credentials missing in .env");
   }
+
   return new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
     key_secret: process.env.RAZORPAY_KEY_SECRET,
@@ -25,7 +26,10 @@ exports.createOrder = async (req, res) => {
   type: typeof amount,
   parsed: Number(amount),
 });
-
+console.log("ENV CHECK:", {
+  key: process.env.RAZORPAY_KEY_ID,
+  secret: process.env.RAZORPAY_KEY_SECRET ? "present" : "missing",
+});
     // ✅ Validation
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
       return res.status(400).json({ message: "Invalid amount" });
