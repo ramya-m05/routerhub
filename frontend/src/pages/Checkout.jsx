@@ -106,6 +106,7 @@ function Checkout() {
     });
 
     console.log("ORDER DATA:", data);
+    console.log("LIVE KEY:", import.meta.env.VITE_RAZORPAY_KEY);
 
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
