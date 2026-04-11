@@ -91,7 +91,7 @@ function Navbar({ products = [] }) {
           {/* LOGO */}
           <Link to="/" style={s.logo}>
             <img
-              src="/images/ROUTERKART_logo2.png"
+              src="/ROUTERKART_logo2.png"
               alt="RouterKart"
               style={{ height: isMobile ? "46px" : "54px", width: "auto", objectFit: "contain" }}
             />
