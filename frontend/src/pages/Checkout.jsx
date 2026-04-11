@@ -99,10 +99,19 @@ const placeOrder = async () => {
 
     console.log("FRONTEND AMOUNT:", amount, typeof amount);
 
+    // ✅ STEP 1: CHECK STOCK BEFORE PAYMENT
+    await API.post("/orders/check-stock", {
+      items: cart.map((i) => ({
+        productId: i._id,
+        qty: i.qty,
+      })),
+    });
+
+    // ✅ STEP 2: CREATE ORDER (RAZORPAY)
     const { data } = await API.post("/payment/create-order", { amount });
 
     console.log("ORDER DATA:", data);
-    
+
     const options = {
       key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: data.amount,
@@ -127,25 +136,24 @@ const placeOrder = async () => {
       theme: {
         color: "#FEE12B",
       },
-      
 
-      // ✅ EVERYTHING HAPPENS INSIDE HANDLER
+      // ✅ STEP 3: PAYMENT SUCCESS HANDLER
       handler: async function (response) {
         try {
           console.log("PAYMENT SUCCESS:", response);
 
-          // ✅ VERIFY
+          // ✅ VERIFY PAYMENT
           const verifyRes = await API.post("/payment/verify", {
             razorpay_order_id: response.razorpay_order_id,
             razorpay_payment_id: response.razorpay_payment_id,
             razorpay_signature: response.razorpay_signature,
           });
 
-          if (!verifyRes.data?.verified) {
-            throw new Error("Verification failed");
+          if (!verifyRes.data?.success) {
+            throw new Error("Payment verification failed");
           }
 
-          // ✅ CREATE ORDER
+          // ✅ CREATE FINAL ORDER
           await API.post("/orders", {
             items: cart.map((i) => ({
               productId: i._id,
@@ -183,12 +191,24 @@ const placeOrder = async () => {
 
           clearCart();
 
-          toast.success("Payment successful 🎉");
+          toast.success(
+            paymentMode === "cod"
+              ? `Order placed! ₹${codOnDelivery} due on delivery 🎉`
+              : "Payment successful 🎉"
+          );
+
           navigate("/orders");
 
         } catch (err) {
-          console.log("VERIFY ERROR:", err.response?.data || err);
-          toast.error("Payment verification failed");
+          console.log("ORDER ERROR:", err.response?.data || err);
+
+          const msg = err.response?.data?.message;
+
+          if (msg?.includes("stock")) {
+            toast.error("Product is out of stock ❌");
+          } else {
+            toast.error(msg || "Order failed after payment");
+          }
         }
       },
 
@@ -212,7 +232,15 @@ const placeOrder = async () => {
 
   } catch (err) {
     console.log("PAYMENT ERROR:", err.response?.data || err);
-    toast.error(err.response?.data?.message || "Payment failed");
+
+    const msg = err.response?.data?.message;
+
+    if (msg?.includes("stock")) {
+      toast.error("Some items are out of stock ❌");
+    } else {
+      toast.error(msg || "Payment initialization failed");
+    }
+
   } finally {
     setLoading(false);
   }

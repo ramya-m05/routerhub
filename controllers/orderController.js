@@ -242,3 +242,44 @@ exports.getOrder = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch order" });
   }
 };
+
+// ✅ CHECK STOCK
+exports.checkStock = async (req, res) => {
+  const { items } = req.body;
+
+  for (const item of items) {
+    const product = await Product.findById(item.productId);
+
+    if (!product || product.stock < item.qty) {
+      return res.status(400).json({
+        message: `Insufficient stock for ${product?.name || "product"}`
+      });
+    }
+  }
+
+  res.json({ success: true });
+};
+
+// ✅ CREATE ORDER
+exports.createOrder = async (req, res) => {
+  try {
+    const order = await Order.create({
+      ...req.body,
+      user: req.user?.id, // if auth middleware
+    });
+
+    // ✅ REDUCE STOCK
+    for (const item of req.body.items) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { stock: -item.qty } }
+      );
+    }
+
+    res.status(201).json(order);
+
+  } catch (err) {
+    console.error("ORDER ERROR:", err);
+    res.status(500).json({ message: err.message });
+  }
+};

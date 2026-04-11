@@ -38,8 +38,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
-app.use("/api/users", userRoutes); // ✅ NOW WORKS
-
+app.use("/api/users", userRoutes);
 // DB CONNECTION
 mongoose.connect(process.env.MONGO_URI, {
   serverSelectionTimeoutMS: 5000,
