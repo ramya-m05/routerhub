@@ -97,7 +97,7 @@ exports.verifyPayment = async (req, res) => {
     console.log("✅ PAYMENT VERIFIED");
 
     return res.json({
-      success: true,
+      verified: true,
       message: "Payment verified successfully",
     });
 
