@@ -50,11 +50,6 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-    return res.status(500).json({
-      message: err.message || "Failed to create order",
-    });
-  }
-};
 /* ═════════ VERIFY PAYMENT ═════════ */
 exports.verifyPayment = async (req, res) => {
   try {
