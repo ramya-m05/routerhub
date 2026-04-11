@@ -6,7 +6,8 @@ const {
   getProduct,
   createProduct,
   updateProduct,
-  deleteProduct
+  deleteProduct,
+  getReviews
 } = require("../controllers/productController");
 
 const { verifyToken } = require("../middleware/authMiddleware");
