@@ -1,18 +1,29 @@
 const Product = require("../models/Product");
 const mongoose = require("mongoose");
 
-/* ─── GET all products ─── */
+/* ─────────────────────────────────────────────
+   GET ALL PRODUCTS
+───────────────────────────────────────────── */
 exports.getProducts = async (req, res) => {
   try {
+    console.log("🔥 getProducts hit");
+
     const products = await Product.find().lean();
-    res.json(products);
+
+    return res.status(200).json(products);
+
   } catch (err) {
-    console.error("GET PRODUCTS ERROR:", err);
-    res.status(500).json({ message: "Failed to fetch products" });
+    console.error("❌ GET PRODUCTS ERROR:", err);
+    return res.status(500).json({
+      message: "Failed to fetch products",
+      error: err.message
+    });
   }
 };
 
-/* ─── GET single product ─── */
+/* ─────────────────────────────────────────────
+   GET SINGLE PRODUCT
+───────────────────────────────────────────── */
 exports.getProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -27,28 +38,42 @@ exports.getProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.json(product);
+    return res.status(200).json(product);
 
   } catch (err) {
-    console.error("GET PRODUCT ERROR:", err);
-    res.status(500).json({ message: "Failed to fetch product" });
+    console.error("❌ GET PRODUCT ERROR:", err);
+    return res.status(500).json({
+      message: "Failed to fetch product",
+      error: err.message
+    });
   }
 };
 
-/* ─── CREATE product ─── */
+/* ─────────────────────────────────────────────
+   CREATE PRODUCT
+───────────────────────────────────────────── */
 exports.createProduct = async (req, res) => {
   try {
     const {
-      name, category, description, price,
-      originalPrice, stock, brand, sku, deliveryDays
+      name,
+      category,
+      description,
+      price,
+      originalPrice,
+      stock,
+      brand,
+      sku,
+      deliveryDays
     } = req.body;
 
-    // ✅ Basic validation
+    // ✅ Validation
     if (!name?.trim() || !category || !price) {
-      return res.status(400).json({ message: "Required fields missing" });
+      return res.status(400).json({
+        message: "Name, category and price are required"
+      });
     }
 
-    // ✅ Multi-image handling
+    // ✅ Safe image handling (even if multer not used)
     const images = req.files?.map(file => file.path) || [];
 
     const product = await Product.create({
@@ -64,30 +89,41 @@ exports.createProduct = async (req, res) => {
       images
     });
 
-    res.status(201).json(product);
+    return res.status(201).json(product);
 
   } catch (err) {
-    console.error("CREATE PRODUCT ERROR:", err);
-    res.status(500).json({ message: err.message });
+    console.error("❌ CREATE PRODUCT ERROR:", err);
+    return res.status(500).json({
+      message: "Failed to create product",
+      error: err.message
+    });
   }
 };
 
-/* ─── UPDATE product ─── */
+/* ─────────────────────────────────────────────
+   UPDATE PRODUCT
+───────────────────────────────────────────── */
 exports.updateProduct = async (req, res) => {
   try {
-    const {
-      name, category, description, price,
-      originalPrice, stock, brand, sku, deliveryDays
-    } = req.body;
-
     const { id } = req.params;
 
-    // ✅ Validate ID
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "Invalid product ID" });
     }
 
-    // ✅ Parse existing images safely
+    const {
+      name,
+      category,
+      description,
+      price,
+      originalPrice,
+      stock,
+      brand,
+      sku,
+      deliveryDays
+    } = req.body;
+
+    // ✅ Existing images
     let existingImages = [];
     try {
       existingImages = JSON.parse(req.body.existingImages || "[]");
@@ -95,28 +131,25 @@ exports.updateProduct = async (req, res) => {
       existingImages = [];
     }
 
-    // ✅ New uploaded images
+    // ✅ New images
     const newImages = req.files?.map(file => file.path) || [];
 
-    // ✅ Merge old + new images
     const finalImages = [...existingImages, ...newImages];
-
-    const updateData = {
-      name: name?.trim(),
-      category,
-      description: description?.trim() || "",
-      price: Number(price),
-      originalPrice: originalPrice ? Number(originalPrice) : null,
-      stock: Number(stock) || 0,
-      brand: brand?.trim() || "",
-      sku: sku?.trim() || "",
-      deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
-      images: finalImages
-    };
 
     const updated = await Product.findByIdAndUpdate(
       id,
-      updateData,
+      {
+        name: name?.trim(),
+        category,
+        description: description?.trim() || "",
+        price: Number(price),
+        originalPrice: originalPrice ? Number(originalPrice) : null,
+        stock: Number(stock) || 0,
+        brand: brand?.trim() || "",
+        sku: sku?.trim() || "",
+        deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
+        images: finalImages
+      },
       { new: true }
     );
 
@@ -124,15 +157,20 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.json(updated);
+    return res.status(200).json(updated);
 
   } catch (err) {
-    console.error("UPDATE PRODUCT ERROR:", err);
-    res.status(500).json({ message: err.message });
+    console.error("❌ UPDATE PRODUCT ERROR:", err);
+    return res.status(500).json({
+      message: "Failed to update product",
+      error: err.message
+    });
   }
 };
 
-/* ─── DELETE product ─── */
+/* ─────────────────────────────────────────────
+   DELETE PRODUCT
+───────────────────────────────────────────── */
 exports.deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
@@ -147,14 +185,25 @@ exports.deleteProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.json({ message: "Product deleted" });
+    return res.status(200).json({ message: "Product deleted successfully" });
 
   } catch (err) {
-    console.error("DELETE PRODUCT ERROR:", err);
-    res.status(500).json({ message: err.message });
+    console.error("❌ DELETE PRODUCT ERROR:", err);
+    return res.status(500).json({
+      message: "Failed to delete product",
+      error: err.message
+    });
   }
 };
 
+/* ─────────────────────────────────────────────
+   GET REVIEWS (SAFE PLACEHOLDER)
+───────────────────────────────────────────── */
 exports.getReviews = async (req, res) => {
-  res.json([]); // temporary safe fix
+  try {
+    return res.json([]); // safe fallback
+  } catch (err) {
+    console.error("❌ GET REVIEWS ERROR:", err);
+    return res.status(500).json({ message: err.message });
+  }
 };
