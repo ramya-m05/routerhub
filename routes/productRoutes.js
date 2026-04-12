@@ -31,8 +31,7 @@ router.get("/:id/reviews", getReviews);
 ───────────────────────────────────────────── */
 
 // Create product
-router.post("/", verifyToken, isAdmin, createProduct);
-
+router.post("/", verifyToken, isAdmin, upload.array("images", 6), createProduct);
 // Update product
 router.put("/:id", verifyToken, isAdmin, updateProduct);
 

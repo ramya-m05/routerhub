@@ -1,6 +1,6 @@
 const Product = require("../models/Product");
 const mongoose = require("mongoose");
-
+const cloudinary = require("../config/cloudinary");
 /* ─────────────────────────────────────────────
    GET ALL PRODUCTS
 ───────────────────────────────────────────── */
@@ -55,26 +55,30 @@ exports.getProduct = async (req, res) => {
 exports.createProduct = async (req, res) => {
   try {
     const {
-      name,
-      category,
-      description,
-      price,
-      originalPrice,
-      stock,
-      brand,
-      sku,
-      deliveryDays
+      name, category, description, price,
+      originalPrice, stock, brand, sku, deliveryDays
     } = req.body;
 
-    // ✅ Validation
     if (!name?.trim() || !category || !price) {
-      return res.status(400).json({
-        message: "Name, category and price are required"
-      });
+      return res.status(400).json({ message: "Required fields missing" });
     }
 
-    // ✅ Safe image handling (even if multer not used)
-    const images = req.files?.map(file => file.path) || [];
+    let imageUrls = [];
+
+    // Existing images
+    if (req.body.existingImages) {
+      try {
+        imageUrls = JSON.parse(req.body.existingImages);
+      } catch {
+        imageUrls = [];
+      }
+    }
+
+    // New images (already uploaded)
+    if (req.files && req.files.length > 0) {
+      const newImages = req.files.map(file => file.path);
+      imageUrls.push(...newImages);
+    }
 
     const product = await Product.create({
       name: name.trim(),
@@ -86,17 +90,14 @@ exports.createProduct = async (req, res) => {
       brand: brand?.trim() || "",
       sku: sku?.trim() || "",
       deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
-      images
+      images: imageUrls
     });
 
-    return res.status(201).json(product);
+    res.status(201).json(product);
 
   } catch (err) {
-    console.error("❌ CREATE PRODUCT ERROR:", err);
-    return res.status(500).json({
-      message: "Failed to create product",
-      error: err.message
-    });
+    console.error("CREATE PRODUCT ERROR:", err);
+    res.status(500).json({ message: err.message });
   }
 };
 
