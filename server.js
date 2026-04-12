@@ -31,7 +31,7 @@ app.use(
 );
 
 // ✅ Explicitly handle OPTIONS preflight for all routes
-app.options("/{*path}", cors());
+// app.options("/{*path}", cors());
 
 /* ─────────────────────────────────────────────
    BODY PARSERS
