@@ -12,6 +12,7 @@ const {
 
 const { verifyToken } = require("../middleware/authMiddleware");
 const { isAdmin } = require("../middleware/adminMiddleware");
+const upload = require("../middleware/upload");
 
 /* ─────────────────────────────────────────────
    PUBLIC ROUTES
@@ -33,8 +34,7 @@ router.get("/:id/reviews", getReviews);
 // Create product
 router.post("/", verifyToken, isAdmin, upload.array("images", 6), createProduct);
 // Update product
-router.put("/:id", verifyToken, isAdmin, updateProduct);
-
+router.put("/:id", verifyToken, isAdmin, upload.array("images", 6), updateProduct);
 // Delete product
 router.delete("/:id", verifyToken, isAdmin, deleteProduct);
 
