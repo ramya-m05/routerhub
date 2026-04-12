@@ -1,6 +1,6 @@
 const Product = require("../models/Product");
 const mongoose = require("mongoose");
-const cloudinary = require("../config/cloudinary");
+
 /* ─────────────────────────────────────────────
    GET ALL PRODUCTS
 ───────────────────────────────────────────── */
@@ -10,14 +10,11 @@ exports.getProducts = async (req, res) => {
 
     const products = await Product.find().lean();
 
-    return res.status(200).json(products);
+    res.status(200).json(products);
 
   } catch (err) {
     console.error("❌ GET PRODUCTS ERROR:", err);
-    return res.status(500).json({
-      message: "Failed to fetch products",
-      error: err.message
-    });
+    res.status(500).json({ message: "Failed to fetch products" });
   }
 };
 
@@ -38,14 +35,11 @@ exports.getProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    return res.status(200).json(product);
+    res.json(product);
 
   } catch (err) {
     console.error("❌ GET PRODUCT ERROR:", err);
-    return res.status(500).json({
-      message: "Failed to fetch product",
-      error: err.message
-    });
+    res.status(500).json({ message: "Failed to fetch product" });
   }
 };
 
@@ -54,18 +48,29 @@ exports.getProduct = async (req, res) => {
 ───────────────────────────────────────────── */
 exports.createProduct = async (req, res) => {
   try {
+    console.log("BODY:", req.body);
+    console.log("FILES:", req.files?.length);
+
     const {
-      name, category, description, price,
-      originalPrice, stock, brand, sku, deliveryDays
+      name,
+      category,
+      description,
+      price,
+      originalPrice,
+      stock,
+      brand,
+      sku,
+      deliveryDays
     } = req.body;
 
+    // ✅ Validation
     if (!name?.trim() || !category || !price) {
       return res.status(400).json({ message: "Required fields missing" });
     }
 
     let imageUrls = [];
 
-    // Existing images
+    // ✅ Existing images (for edit reuse if needed)
     if (req.body.existingImages) {
       try {
         imageUrls = JSON.parse(req.body.existingImages);
@@ -74,7 +79,7 @@ exports.createProduct = async (req, res) => {
       }
     }
 
-    // New images (already uploaded)
+    // ✅ New uploaded images (already uploaded to Cloudinary)
     if (req.files && req.files.length > 0) {
       const newImages = req.files.map(file => file.path);
       imageUrls.push(...newImages);
@@ -96,7 +101,7 @@ exports.createProduct = async (req, res) => {
     res.status(201).json(product);
 
   } catch (err) {
-    console.error("CREATE PRODUCT ERROR:", err);
+    console.error("❌ CREATE PRODUCT ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -124,18 +129,22 @@ exports.updateProduct = async (req, res) => {
       deliveryDays
     } = req.body;
 
+    let imageUrls = [];
+
     // ✅ Existing images
-    let existingImages = [];
-    try {
-      existingImages = JSON.parse(req.body.existingImages || "[]");
-    } catch {
-      existingImages = [];
+    if (req.body.existingImages) {
+      try {
+        imageUrls = JSON.parse(req.body.existingImages);
+      } catch {
+        imageUrls = [];
+      }
     }
 
     // ✅ New images
-    const newImages = req.files?.map(file => file.path) || [];
-
-    const finalImages = [...existingImages, ...newImages];
+    if (req.files && req.files.length > 0) {
+      const newImages = req.files.map(file => file.path);
+      imageUrls.push(...newImages);
+    }
 
     const updated = await Product.findByIdAndUpdate(
       id,
@@ -149,7 +158,7 @@ exports.updateProduct = async (req, res) => {
         brand: brand?.trim() || "",
         sku: sku?.trim() || "",
         deliveryDays: deliveryDays ? Number(deliveryDays) : 5,
-        images: finalImages
+        images: imageUrls
       },
       { new: true }
     );
@@ -158,14 +167,11 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    return res.status(200).json(updated);
+    res.json(updated);
 
   } catch (err) {
     console.error("❌ UPDATE PRODUCT ERROR:", err);
-    return res.status(500).json({
-      message: "Failed to update product",
-      error: err.message
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -186,14 +192,11 @@ exports.deleteProduct = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    return res.status(200).json({ message: "Product deleted successfully" });
+    res.json({ message: "Product deleted successfully" });
 
   } catch (err) {
     console.error("❌ DELETE PRODUCT ERROR:", err);
-    return res.status(500).json({
-      message: "Failed to delete product",
-      error: err.message
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -202,9 +205,9 @@ exports.deleteProduct = async (req, res) => {
 ───────────────────────────────────────────── */
 exports.getReviews = async (req, res) => {
   try {
-    return res.json([]); // safe fallback
+    res.json([]);
   } catch (err) {
     console.error("❌ GET REVIEWS ERROR:", err);
-    return res.status(500).json({ message: err.message });
+    res.status(500).json({ message: err.message });
   }
 };
