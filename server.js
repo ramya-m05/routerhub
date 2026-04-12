@@ -16,35 +16,30 @@ const paymentRoutes = require("./routes/paymentRoutes");
 
 
 // MIDDLEWARE
+// ✅ CORS (FIXED)
 app.use(
   cors({
     origin: [
       "http://localhost:5173",
-      "https://www.routerkart.in",
-      "https://routerkart.in"
+      "https://routerkart.in",
+      "https://www.routerkart.in"
     ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true,
   })
 );
+
+// ✅ HANDLE PREFLIGHT (CRITICAL)
+app.options("*", cors());
+
+// DEBUG
 app.use((req, res, next) => {
   console.log("REQ HIT:", req.method, req.url);
   next();
 });
+
 app.use(express.json());
-
-// ROUTE USE
-app.use("/api/payment", paymentRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/products", productRoutes);
-app.use("/api/orders", orderRoutes);
-app.use("/api/users", userRoutes);
-app.use(express.static(path.join(__dirname, "dist")));
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
-
 
 // DB CONNECTION
 mongoose.connect(process.env.MONGO_URI, {
