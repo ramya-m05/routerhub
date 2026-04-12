@@ -135,11 +135,12 @@ exports.getMyOrders = async (req, res) => {
 exports.getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate("user userId", "name email")
+      .populate("user", "name email")
       .sort({ createdAt: -1 });
 
-    res.json(orders);
+    console.log("ADMIN FETCH:", orders.length);
 
+    res.json(orders);
   } catch (err) {
     console.error("GET ALL ORDERS ERROR:", err);
     res.status(500).json({ message: err.message });

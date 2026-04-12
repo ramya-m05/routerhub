@@ -21,7 +21,7 @@ function AdminOrders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await API.get("/orders");
+      const res = await API.get("/orders/admin");
       setOrders(res.data);
     } catch (err) {
       toast.error("Failed to fetch orders");
@@ -58,15 +58,21 @@ function AdminOrders() {
 
   // FILTER
   const filtered = useMemo(() => {
-    return orders.filter(o => {
-      const matchSearch = search === "" ||
-        o._id?.toLowerCase().includes(search.toLowerCase()) ||
-        (o.userId?.name || o.userId || "").toString().toLowerCase().includes(search.toLowerCase());
-      const matchStatus = filterStatus === "all" || o.status === filterStatus;
-      const matchPayment = filterPayment === "all" || o.paymentMode === filterPayment;
-      return matchSearch && matchStatus && matchPayment;
-    });
-  }, [orders, search, filterStatus, filterPayment]);
+  return orders.filter(o => {
+    const matchSearch =
+      search === "" ||
+      o._id?.toLowerCase().includes(search.toLowerCase()) ||
+      (o.user?.name || "").toLowerCase().includes(search.toLowerCase());
+
+    const matchStatus =
+      filterStatus === "all" || o.status === filterStatus;
+
+    const matchPayment =
+      filterPayment === "all" || o.paymentMode === filterPayment;
+
+    return matchSearch && matchStatus && matchPayment;
+  });
+}, [orders, search, filterStatus, filterPayment]);
 
   const shortId = (id) => id?.slice(-8).toUpperCase() || "—";
 
