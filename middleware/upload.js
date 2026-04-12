@@ -20,6 +20,11 @@ cloudinary.config({
   api_key:    process.env.CLOUD_API_KEY,
   api_secret: process.env.CLOUD_API_SECRET,
 });
+console.log("CLOUD ENV:", {
+  name: process.env.CLOUD_NAME,
+  key: process.env.CLOUD_API_KEY ? "OK" : "MISSING",
+  secret: process.env.CLOUD_API_SECRET ? "OK" : "MISSING"
+});
 
 // ✅ Pass cloudinary.v2 instance directly
 const storage = new CloudinaryStorage({
