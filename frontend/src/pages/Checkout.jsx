@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useIsMobile } from "../hooks/useIsMobile";
 
-const COD_ADVANCE = 1;
+const COD_ADVANCE = 0;
 
 function Checkout() {
   // Delivery fields
@@ -314,8 +314,8 @@ const placeOrder = async () => {
                 <input placeholder="e.g. Bangalore" value={city} onChange={e => setCity(e.target.value)} style={inp} onFocus={onFocus} onBlur={onBlur} />
               </div>
               <div>
-                <label style={lbl}>District <span style={{ color: "#e53e3e" }}>*</span></label>
-                <input placeholder="e.g. Bangalore Urban" value={district} onChange={e => setDistrict(e.target.value)} style={inp} onFocus={onFocus} onBlur={onBlur} />
+                <label style={lbl}>STATE <span style={{ color: "#e53e3e" }}>*</span></label>
+                <input placeholder="e.g. Karnataka" value={district} onChange={e => setDistrict(e.target.value)} style={inp} onFocus={onFocus} onBlur={onBlur} />
               </div>
             </div>
 
