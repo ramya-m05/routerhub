@@ -39,7 +39,7 @@ function AdminOrders() {
   const updateStatus = async (id, status) => {
     setUpdatingId(id);
     try {
-      await API.put(`/orders/${id}`, { status });
+      await API.put(`/orders/admin/${id}`, { status });
       setOrders(prev => prev.map(o => o._id === id ? { ...o, status } : o));
       toast.success(`Order marked as ${status}`);
     } catch {

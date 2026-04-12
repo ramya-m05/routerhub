@@ -5,7 +5,8 @@ const {
   getMyOrders,
   getAllOrders,
   createOrder,
-  checkStock
+  checkStock,
+  updateOrderStatus
 } = require("../controllers/orderController");
 
 const { verifyToken } = require("../middleware/authMiddleware");
