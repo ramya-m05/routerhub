@@ -30,14 +30,6 @@ app.use(
   })
 );
 
-// ✅ HANDLE PREFLIGHT (CRITICAL)
-app.options("*", cors());
-
-// DEBUG
-app.use((req, res, next) => {
-  console.log("REQ HIT:", req.method, req.url);
-  next();
-});
 
 app.use(express.json());
 
