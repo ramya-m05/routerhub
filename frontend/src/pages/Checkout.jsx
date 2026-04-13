@@ -5,7 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useIsMobile } from "../hooks/useIsMobile";
 
-const COD_ADVANCE = 0;
+const COD_ADVANCE = 1;
 
 function Checkout() {
   // Delivery fields
