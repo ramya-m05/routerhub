@@ -26,13 +26,21 @@ exports.checkStock = async (req, res) => {
   }
 };
 
-
 /* ───────────────────────────────────────────── */
 /* ✅ CREATE ORDER */
 /* ───────────────────────────────────────────── */
 exports.createOrder = async (req, res) => {
   try {
-    const userId = req.user.id;
+    console.log("🔥 CREATE ORDER HIT");
+
+    // ✅ FIXED: handle both id and _id
+    const userId = req.user?._id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+
+    console.log("USER ID:", userId);
 
     const {
       items,
@@ -47,8 +55,14 @@ exports.createOrder = async (req, res) => {
       razorpayPaymentId
     } = req.body;
 
-    // ✅ Calculate totals (never trust frontend)
+    if (!items || items.length === 0) {
+      return res.status(400).json({ message: "No items in order" });
+    }
+
+    // ✅ Calculate totals securely
     let subtotal = 0;
+
+    const normalizedItems = [];
 
     for (const item of items) {
       const product = await Product.findById(item.productId);
@@ -60,16 +74,25 @@ exports.createOrder = async (req, res) => {
       }
 
       subtotal += item.price * item.qty;
+
+      // ✅ FIXED: normalize schema
+      normalizedItems.push({
+        product: product._id,
+        name: item.name,
+        price: item.price,
+        qty: item.qty
+      });
     }
 
-    const delivery = 0; // you can customize
+    const delivery = 0;
     const totalAmount = subtotal + delivery;
 
-    // ✅ Create order
+    // ✅ CREATE ORDER
     const order = await Order.create({
       user: userId,
 
-      items,
+      items: normalizedItems,
+
       address,
       addressDetails,
       phone,
@@ -85,13 +108,20 @@ exports.createOrder = async (req, res) => {
       amountDueOnDelivery,
 
       razorpayOrderId,
-      razorpayPaymentId
+      razorpayPaymentId,
+
+      status: "pending",
+      timeline: {
+        pending: new Date()
+      }
     });
 
+    console.log("✅ ORDER CREATED:", order._id);
+
     // ✅ Reduce stock
-    for (const item of items) {
+    for (const item of normalizedItems) {
       await Product.findByIdAndUpdate(
-        item.productId,
+        item.product,
         { $inc: { stock: -item.qty } }
       );
     }
@@ -99,26 +129,25 @@ exports.createOrder = async (req, res) => {
     res.status(201).json(order);
 
   } catch (err) {
-    console.error("CREATE ORDER ERROR:", err);
+    console.error("❌ CREATE ORDER ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };
-
 
 /* ───────────────────────────────────────────── */
 /* ✅ GET USER ORDERS */
 /* ───────────────────────────────────────────── */
 exports.getMyOrders = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?._id || req.user?.id;
 
     const orders = await Order.find({
       $or: [
-        { user: userId },   // new schema
-        { userId: userId }  // old data support
+        { user: userId },
+        { userId: userId } // legacy support
       ]
     })
-    .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 });
 
     res.json(orders);
 
@@ -127,7 +156,6 @@ exports.getMyOrders = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
 
 /* ───────────────────────────────────────────── */
 /* ✅ GET ALL ORDERS (ADMIN) */
@@ -141,12 +169,12 @@ exports.getAllOrders = async (req, res) => {
     console.log("ADMIN FETCH:", orders.length);
 
     res.json(orders);
+
   } catch (err) {
     console.error("GET ALL ORDERS ERROR:", err);
     res.status(500).json({ message: err.message });
   }
 };
-
 
 /* ───────────────────────────────────────────── */
 /* ✅ UPDATE ORDER STATUS (ADMIN) */
@@ -163,7 +191,8 @@ exports.updateOrderStatus = async (req, res) => {
 
     order.status = status;
 
-    // ✅ update timeline automatically
+    // ✅ timeline safe update
+    order.timeline = order.timeline || {};
     order.timeline[status] = new Date();
 
     await order.save();
