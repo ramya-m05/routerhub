@@ -339,6 +339,20 @@ const placeOrder = async () => {
                 <input placeholder="e.g. Karnataka" value={district} onChange={e => setDistrict(e.target.value)} style={inp} onFocus={onFocus} onBlur={onBlur} />
               </div>
             </div>
+            {/* STATE */}
+<div style={{ marginBottom: "14px" }}>
+  <label style={lbl}>State <span style={{ color: "#e53e3e" }}>*</span></label>
+  <select
+    value={state}
+    onChange={e => setState(e.target.value)}
+    style={inp}
+    onFocus={onFocus}
+    onBlur={onBlur}
+  >
+    <option value="">Select state</option>
+    {INDIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+  </select>
+</div>
 
             {/* ROW 4 — Pincode + Phone */}
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: "14px" }}>
