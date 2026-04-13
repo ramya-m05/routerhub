@@ -1,9 +1,9 @@
-const User   = require("../models/User");
-const jwt    = require("jsonwebtoken");
+const User = require("../models/User");
+const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 
-/* ── helpers ─────────────────────────────────────── */
+/* ── helpers ───────────────── */
 const generateToken = (user) => {
   const isAdmin = user.role === "admin" || user.isAdmin === true;
   return jwt.sign(
@@ -23,15 +23,6 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    if (!name?.trim())
-      return res.status(400).json({ message: "Name is required" });
-
-    if (!email?.trim())
-      return res.status(400).json({ message: "Email is required" });
-
-    if (!password || password.length < 6)
-      return res.status(400).json({ message: "Password must be at least 6 characters" });
-
     const emailKey = email.toLowerCase().trim();
 
     const existing = await User.findOne({ email: emailKey });
@@ -39,26 +30,20 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Email already exists" });
 
     const user = await User.create({
-      name: name.trim(),
+      name,
       email: emailKey,
       password,
     });
 
-    console.log("USER CREATED:", user);
-
     const token = generateToken(user);
 
-    return res.status(201).json({
+    res.status(201).json({
       token,
-      name: user.name,     // ✅ FIXED
+      name: user.name,
       email: user.email,
     });
-
   } catch (err) {
-    console.error("🔥 REGISTER ERROR FULL:", err);
-    return res.status(500).json({
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 
@@ -67,74 +52,95 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password)
-      return res.status(400).json({
-        message: "Email and password are required"
-      });
-
     const user = await User.findOne({
-      email: email.toLowerCase().trim()
+      email: email.toLowerCase().trim(),
     });
 
     if (!user)
-      return res.status(400).json({
-        message: "User not found"
-      });
+      return res.status(400).json({ message: "User not found" });
 
     const match = await bcrypt.compare(password, user.password);
 
     if (!match)
-      return res.status(400).json({
-        message: "Incorrect password"
-      });
+      return res.status(400).json({ message: "Incorrect password" });
 
     const token = generateToken(user);
-    const role  = getRole(user);
 
-    if (user.isAdmin === true && user.role !== "admin") {
-      await User.findByIdAndUpdate(user._id, { role: "admin" }).catch(() => {});
-    }
-
-    return res.json({
+    res.json({
       token,
-      role,
-      name: user.name,     // ✅ FIXED
-      email: user.email
+      role: getRole(user),
+      name: user.name,
+      email: user.email,
     });
-
   } catch (err) {
-    console.error("🔥 LOGIN ERROR FULL:", err);
-    return res.status(500).json({
-      message: err.message
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 
 /* ═════════ FORGOT PASSWORD ═════════ */
 
 const resetStore = new Map();
-const makeOtp    = () => crypto.randomInt(100000, 999999).toString();
+const makeOtp = () => crypto.randomInt(100000, 999999).toString();
 
+/* SEND OTP */
 exports.forgotPasswordSendOtp = async (req, res) => {
   try {
     const emailKey = req.body.email?.toLowerCase().trim();
-    if (!emailKey)
-      return res.status(400).json({ message: "Invalid email" });
 
     const user = await User.findOne({ email: emailKey });
     if (!user)
       return res.status(404).json({ message: "User not found" });
 
-    const otp        = makeOtp();
-    const otpExpires = Date.now() + 10 * 60 * 1000;
-    resetStore.set(emailKey, { otp, otpExpires });
+    const otp = makeOtp();
+
+    resetStore.set(emailKey, {
+      otp,
+      expires: Date.now() + 10 * 60 * 1000,
+    });
 
     const { sendOtpEmail } = require("../services/emailService");
     await sendOtpEmail(emailKey, otp, "passwordReset");
 
     res.json({ message: "OTP sent" });
   } catch (err) {
-    console.error("OTP ERROR:", err);
-    res.status(500).json({ message: "Failed to send OTP" });
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* VERIFY OTP */
+exports.forgotPasswordVerifyOtp = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const data = resetStore.get(email.toLowerCase());
+
+    if (!data || data.otp !== otp || Date.now() > data.expires) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    res.json({ verified: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+/* RESET PASSWORD */
+exports.forgotPasswordReset = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    user.password = password;
+    await user.save();
+
+    resetStore.delete(email.toLowerCase());
+
+    res.json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 };
