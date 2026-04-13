@@ -89,8 +89,7 @@ exports.forgotPasswordSendOtp = async (req, res) => {
 
     const user = await User.findOne({ email: emailKey });
     if (!user)
-      return res.status(404).json({ message: "User not found" });
-
+      return res.json({ message: "If email exists, OTP sent" });
     const otp = makeOtp();
 
     resetStore.set(emailKey, {
@@ -132,8 +131,7 @@ exports.forgotPasswordReset = async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user)
-      return res.status(404).json({ message: "User not found" });
-
+      return res.json({ message: "If email exists, OTP sent" });
     user.password = password;
     await user.save();
 
