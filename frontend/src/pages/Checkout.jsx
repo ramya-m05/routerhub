@@ -170,7 +170,7 @@ const placeOrder = async () => {
             razorpay_signature: response.razorpay_signature,
           });
 
-          if (!verifyRes.data?.success) {
+          if (!verifyRes.data?.verified) {
             throw new Error("Payment verification failed");
           }
 
