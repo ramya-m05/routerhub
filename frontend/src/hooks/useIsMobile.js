@@ -1,16 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useLayoutEffect } from "react";
 
-/**
- * Returns true when viewport width is ≤ the given breakpoint (default 768px).
- * Updates automatically on resize.
- */
 export function useIsMobile(breakpoint = 768) {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= breakpoint);
+  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth <= breakpoint);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
+  useLayoutEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= breakpoint);
+    check(); // ✅ run immediately on mount/navigation
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
   }, [breakpoint]);
 
   return isMobile;

@@ -9,8 +9,8 @@ router.post("/register", auth.register);
 router.post("/login", auth.login);
 
 // ✅ Forgot Password
-//router.post("/forgot-password/send-otp", auth.forgotPasswordSendOtp);
-//router.post("/forgot-password/verify-otp", auth.forgotPasswordVerifyOtp);
-//router.post("/forgot-password/reset", auth.forgotPasswordReset);
+router.post("/forgot-password/send-otp", auth.forgotPasswordSendOtp);
+router.post("/forgot-password/verify-otp", auth.forgotPasswordVerifyOtp);
+router.post("/forgot-password/reset", auth.forgotPasswordReset);
 
 module.exports = router;
