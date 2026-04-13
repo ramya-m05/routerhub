@@ -20,7 +20,7 @@ function Orders() {
 
   const fetchOrders = async () => {
     try {
-      const res = await API.get("/orders/my");
+      const res = await API.get("/orders");
       setOrders(res.data);
     } catch (err) {
       console.log(err);
