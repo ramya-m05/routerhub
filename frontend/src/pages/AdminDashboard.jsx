@@ -211,14 +211,19 @@ function AdminDashboard() {
   };
 
   const startEdit = (p) => {
-    setEditingId(p._id);
-    setName(p.name || ""); setCategory(p.category || ""); setDescription(p.description || "");
-    setPrice(p.price || ""); setStock(p.stock || ""); setOriginalPrice(p.originalPrice || "");
-    setDeliveryDays(p.deliveryDays || "5"); setBrand(p.brand || ""); setSku(p.sku || "");
-    const imgs = p.images?.length ? p.images : (p.image ? [p.image] : []);
-    setImageSlots(imgs.filter(Boolean).map(url => ({ file: null, preview: url, existing: true })));
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-  };
+  setEditingId(p._id);
+  setName(p.name || ""); setCategory(p.category || ""); setDescription(p.description || "");
+  setPrice(p.price || ""); setStock(p.stock || ""); setOriginalPrice(p.originalPrice || "");
+  setDeliveryDays(p.deliveryDays || "5"); setBrand(p.brand || ""); setSku(p.sku || "");
+
+  // ✅ FIX: collect from images[] array AND legacy image string, deduplicate, filter empties
+  const fromArray  = Array.isArray(p.images) ? p.images : [];
+  const fromSingle = p.image && !fromArray.includes(p.image) ? [p.image] : [];
+  const imgs       = [...fromArray, ...fromSingle].filter(Boolean);
+
+  setImageSlots(imgs.map(url => ({ file: null, preview: url, existing: true })));
+  window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+};
 
   const resetForm = () => {
     setName(""); setDescription(""); setPrice(""); setOriginalPrice("");

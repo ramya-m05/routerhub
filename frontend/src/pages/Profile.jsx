@@ -9,93 +9,201 @@ const OTP_STEP = { IDLE: "idle", SENDING: "sending", VERIFY: "verify", VERIFYING
 const ADDR_LABELS = ["Home", "Work", "Other"];
 
 /* ─── Address Form Modal ─────────────────────────── */
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+  "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+];
+
 function AddressModal({ existing, onSave, onClose }) {
   const [form, setForm] = useState(existing || {
-    label: "Home", doorNo: "", houseName: "", cross: "",
-    landmark: "", city: "", district: "", pincode: "", phone: "", isDefault: false
+    label:     "Home",
+    doorNo:    "",
+    houseName: "",
+    cross:     "",
+    landmark:  "",
+    city:      "",
+    district:  "",
+    state:     "Karnataka",
+    pincode:   "",
+    phone:     "",
+    isDefault: false,
   });
   const [saving, setSaving] = useState(false);
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.city?.trim() || !form.district?.trim() || !form.pincode?.trim() || form.pincode.length !== 6) {
-      toast.error("City, district and a valid 6-digit pincode are required"); return;
+    if (!form.doorNo?.trim()) {
+      toast.error("Door No. is required"); return;
+    }
+    if (!form.city?.trim()) {
+      toast.error("City is required"); return;
+    }
+    if (!form.district?.trim()) {
+      toast.error("District is required"); return;
+    }
+    if (!form.state?.trim()) {
+      toast.error("State is required"); return;
+    }
+    if (!form.pincode?.trim() || form.pincode.length !== 6) {
+      toast.error("Enter a valid 6-digit pincode"); return;
     }
     setSaving(true);
     try { await onSave(form); } finally { setSaving(false); }
   };
 
-  const inp = { width: "100%", padding: "11px 14px", border: "2px solid #e5e5e5", borderRadius: "8px", fontSize: "14px", color: "#111", background: "white", outline: "none", transition: "border-color 0.15s", boxSizing: "border-box", fontFamily: "'DM Sans', sans-serif" };
+  const inp = {
+    width: "100%", padding: "11px 14px", border: "2px solid #e5e5e5",
+    borderRadius: "8px", fontSize: "14px", color: "#111", background: "white",
+    outline: "none", transition: "border-color 0.15s",
+    boxSizing: "border-box", fontFamily: "'DM Sans', sans-serif",
+  };
+  const fo = e => (e.target.style.borderColor = "#FEE12B");
+  const bl = e => (e.target.style.borderColor = "#e5e5e5");
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: "20px", overflowY: "auto" }}>
       <div style={{ background: "white", borderRadius: "16px", padding: "28px", width: "100%", maxWidth: "520px", boxShadow: "0 24px 80px rgba(0,0,0,0.3)" }}>
+
+        {/* HEADER */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
           <h3 style={{ fontWeight: "900", fontSize: "18px", color: "#111", margin: 0 }}>
-            {existing ? "Edit Address" : "Add New Address"}
+            {existing ? "✏️ Edit Address" : "➕ Add New Address"}
           </h3>
-          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#aaa" }}>×</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", fontSize: "22px", cursor: "pointer", color: "#aaa", lineHeight: 1 }}>×</button>
         </div>
 
         {/* LABEL */}
-        <div style={{ marginBottom: "14px" }}>
+        <div style={{ marginBottom: "16px" }}>
           <label style={lbl}>Label</label>
           <div style={{ display: "flex", gap: "8px" }}>
             {ADDR_LABELS.map(l => (
               <button key={l} onClick={() => set("label", l)}
-                style={{ flex: 1, padding: "9px", border: `2px solid ${form.label === l ? "#FEE12B" : "#e5e5e5"}`, background: form.label === l ? "#FFFDF0" : "white", borderRadius: "8px", fontWeight: "700", fontSize: "13px", cursor: "pointer", color: "#111", fontFamily: "'DM Sans', sans-serif" }}>
+                style={{ flex: 1, padding: "9px", border: `2px solid ${form.label === l ? "#FEE12B" : "#e5e5e5"}`, background: form.label === l ? "#FFFDF0" : "white", borderRadius: "8px", fontWeight: "700", fontSize: "13px", cursor: "pointer", color: "#111", fontFamily: "'DM Sans', sans-serif", transition: "all 0.15s" }}>
                 {l === "Home" ? "🏠" : l === "Work" ? "🏢" : "📍"} {l}
               </button>
             ))}
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-          {[
-            { label: "Door No.", key: "doorNo", placeholder: "e.g. 12B, Flat 4A", req: true },
-            { label: "House / Building Name", key: "houseName", placeholder: "e.g. Green Apartments" },
-            { label: "Cross / Street", key: "cross", placeholder: "e.g. 5th Cross, MG Road" },
-            { label: "Landmark (Optional)", key: "landmark", placeholder: "e.g. Near Bus Stand" },
-            { label: "City", key: "city", placeholder: "e.g. Bangalore", req: true },
-            { label: "District", key: "district", placeholder: "e.g. Bangalore Urban", req: true },
-          ].map(f => (
-            <div key={f.key}>
-              <label style={lbl}>{f.label} {f.req && <span style={{ color: "#e53e3e" }}>*</span>}</label>
-              <input placeholder={f.placeholder} value={form[f.key] || ""} onChange={e => set(f.key, e.target.value)} style={inp}
-                onFocus={e => e.target.style.borderColor = "#FEE12B"} onBlur={e => e.target.style.borderColor = "#e5e5e5"} />
-            </div>
-          ))}
+        {/* ROW 1 — Door No + House Name */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+          <div>
+            <label style={lbl}>Door No. <span style={{ color: "#e53e3e" }}>*</span></label>
+            <input placeholder="e.g. 12B, Flat 4A" value={form.doorNo || ""} onChange={e => set("doorNo", e.target.value)} style={inp} onFocus={fo} onBlur={bl} />
+          </div>
+          <div>
+            <label style={lbl}>House / Building Name</label>
+            <input placeholder="e.g. Green Apartments" value={form.houseName || ""} onChange={e => set("houseName", e.target.value)} style={inp} onFocus={fo} onBlur={bl} />
+          </div>
+        </div>
+
+        {/* ROW 2 — Cross + Landmark */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+          <div>
+            <label style={lbl}>Cross / Street</label>
+            <input placeholder="e.g. 5th Cross, MG Road" value={form.cross || ""} onChange={e => set("cross", e.target.value)} style={inp} onFocus={fo} onBlur={bl} />
+          </div>
+          <div>
+            <label style={lbl}>Landmark <span style={{ color: "#aaa", fontWeight: "500", textTransform: "none", letterSpacing: 0 }}>(Optional)</span></label>
+            <input placeholder="e.g. Near Bus Stand" value={form.landmark || ""} onChange={e => set("landmark", e.target.value)} style={inp} onFocus={fo} onBlur={bl} />
+          </div>
+        </div>
+
+        {/* ROW 3 — City + District */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "12px" }}>
+          <div>
+            <label style={lbl}>City <span style={{ color: "#e53e3e" }}>*</span></label>
+            <input placeholder="e.g. Bangalore" value={form.city || ""} onChange={e => set("city", e.target.value)} style={inp} onFocus={fo} onBlur={bl} />
+          </div>
+          <div>
+            <label style={lbl}>District <span style={{ color: "#e53e3e" }}>*</span></label>
+            <input placeholder="e.g. Bangalore Urban" value={form.district || ""} onChange={e => set("district", e.target.value)} style={inp} onFocus={fo} onBlur={bl} />
+          </div>
+        </div>
+
+        {/* ROW 4 — State (full width) */}
+        <div style={{ marginBottom: "12px" }}>
+          <label style={lbl}>State <span style={{ color: "#e53e3e" }}>*</span></label>
+          <select
+            value={form.state || "Karnataka"}
+            onChange={e => set("state", e.target.value)}
+            style={inp}
+            onFocus={fo}
+            onBlur={bl}
+          >
+            {INDIAN_STATES.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* ROW 5 — Pincode + Phone */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
           <div>
             <label style={lbl}>Pincode <span style={{ color: "#e53e3e" }}>*</span></label>
-            <input placeholder="6-digit pincode" value={form.pincode || ""} maxLength={6}
-              onChange={e => set("pincode", e.target.value.replace(/\D/g, ""))} style={inp}
-              onFocus={e => e.target.style.borderColor = "#FEE12B"} onBlur={e => e.target.style.borderColor = "#e5e5e5"} />
+            <input
+              placeholder="6-digit pincode"
+              value={form.pincode || ""}
+              maxLength={6}
+              onChange={e => set("pincode", e.target.value.replace(/\D/g, ""))}
+              style={{
+                ...inp,
+                borderColor: form.pincode?.length > 0 && form.pincode?.length !== 6 ? "#e53e3e" : "#e5e5e5",
+              }}
+              onFocus={fo}
+              onBlur={e => { e.target.style.borderColor = form.pincode?.length > 0 && form.pincode?.length !== 6 ? "#e53e3e" : "#e5e5e5"; }}
+            />
+            {form.pincode?.length > 0 && form.pincode?.length !== 6 && (
+              <p style={{ fontSize: "11px", color: "#e53e3e", margin: "4px 0 0", fontWeight: "600" }}>Enter 6-digit pincode</p>
+            )}
           </div>
           <div>
             <label style={lbl}>Phone</label>
             <div style={{ position: "relative" }}>
-              <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", fontWeight: "700", color: "#555" }}>+91</span>
-              <input type="tel" placeholder="98xxxxxxxx" value={form.phone || ""} maxLength={10}
-                onChange={e => set("phone", e.target.value.replace(/\D/g, ""))} style={{ ...inp, paddingLeft: "48px" }}
-                onFocus={e => e.target.style.borderColor = "#FEE12B"} onBlur={e => e.target.style.borderColor = "#e5e5e5"} />
+              <span style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", fontSize: "13px", fontWeight: "700", color: "#555", pointerEvents: "none" }}>+91</span>
+              <input
+                type="tel"
+                placeholder="98xxxxxxxx"
+                value={form.phone || ""}
+                maxLength={10}
+                onChange={e => set("phone", e.target.value.replace(/\D/g, ""))}
+                style={{ ...inp, paddingLeft: "48px" }}
+                onFocus={fo} onBlur={bl}
+              />
             </div>
           </div>
         </div>
 
-        <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", margin: "16px 0 20px" }}>
-          <input type="checkbox" checked={form.isDefault} onChange={e => set("isDefault", e.target.checked)}
-            style={{ accentColor: "#FEE12B", width: "16px", height: "16px" }} />
+        {/* DEFAULT CHECKBOX */}
+        <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", marginBottom: "20px" }}>
+          <input
+            type="checkbox"
+            checked={form.isDefault}
+            onChange={e => set("isDefault", e.target.checked)}
+            style={{ accentColor: "#FEE12B", width: "16px", height: "16px", flexShrink: 0 }}
+          />
           <span style={{ fontSize: "13px", color: "#555", fontWeight: "600" }}>Set as default address</span>
         </label>
 
+        {/* BUTTONS */}
         <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={onClose} style={{ flex: 1, padding: "12px", border: "2px solid #eee", background: "white", borderRadius: "8px", fontWeight: "700", cursor: "pointer", color: "#666", fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+          <button onClick={onClose}
+            style={{ flex: 1, padding: "12px", border: "2px solid #eee", background: "white", borderRadius: "8px", fontWeight: "700", cursor: "pointer", color: "#666", fontFamily: "'DM Sans', sans-serif" }}>
+            Cancel
+          </button>
           <button onClick={handleSave} disabled={saving}
             style={{ flex: 1, padding: "12px", background: "#FEE12B", color: "#111", border: "none", borderRadius: "8px", fontWeight: "800", cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.7 : 1, fontFamily: "'DM Sans', sans-serif" }}>
             {saving ? "Saving..." : "Save Address"}
           </button>
         </div>
+
       </div>
     </div>
   );

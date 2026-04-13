@@ -32,57 +32,79 @@ function Checkout() {
   const grandTotal = subtotal + delivery;
   const codOnDelivery = grandTotal - COD_ADVANCE;
 
-  useEffect(() => {
-    const fetchAddresses = async () => {
-      try {
-        const res = await API.get("/users/addresses");
-        setAddresses(res.data);
-        console.log("Fetched addresses:", res.data);
-      } catch (err) {
-        console.error("Failed to fetch addresses:", err);
-      }
-    };
-    fetchAddresses();
-  }, []);
+ const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana",
+  "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal",
+  "Andaman and Nicobar Islands", "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+  "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+];
 
-  useEffect(() => {
-    if (!addresses || addresses.length === 0) return;
-    const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
-    if (!defaultAddress) return;
-    setDoorNo(defaultAddress.doorNo || "");
-    setHouseName(defaultAddress.houseName || "");
-    setCross(defaultAddress.cross || "");
-    setLandmark(defaultAddress.landmark || "");
-    setCity(defaultAddress.city || "");
-    setDistrict(defaultAddress.district || "");
-    setPincode(defaultAddress.pincode || "");
-    setPhone(defaultAddress.phone || "");
-  }, [addresses]);
+// ── inside the component, with other delivery state vars ──
+const [state, setState] = useState("");
 
-  const buildAddress = () => {
-    const parts = [
-      doorNo && `${doorNo}`,
-      houseName && `${houseName}`,
-      cross && `${cross}`,
-      landmark && `Near ${landmark}`,
-      city && `${city}`,
-      district && `${district}`,
-      pincode && `- ${pincode}`,
-    ].filter(Boolean);
-    return parts.join(", ");
-  };
-
-  const validate = () => {
-    if (!doorNo.trim()) { toast.error("Please enter Door No / House Name"); return false; }
-    if (!city.trim()) { toast.error("Please enter your city"); return false; }
-    if (!district.trim()) { toast.error("Please enter your district"); return false; }
-    if (!pincode.trim() || pincode.length !== 6 || isNaN(pincode)) {
-      toast.error("Please enter a valid 6-digit pincode"); return false;
+// ── useEffects ──
+useEffect(() => {
+  const fetchAddresses = async () => {
+    try {
+      const res = await API.get("/users/addresses");
+      setAddresses(res.data);
+    } catch (err) {
+      console.error("Failed to fetch addresses:", err);
     }
-    if (!phone.trim() || phone.length < 10) { toast.error("Please enter a valid 10-digit phone number"); return false; }
-    if (paymentMode === "cod" && !codConfirmed) { toast.error("Please confirm COD advance payment terms"); return false; }
-    return true;
   };
+  fetchAddresses();
+}, []);
+
+useEffect(() => {
+  if (!addresses || addresses.length === 0) return;
+  const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
+  if (!defaultAddress) return;
+  setDoorNo(defaultAddress.doorNo    || "");
+  setHouseName(defaultAddress.houseName || "");
+  setCross(defaultAddress.cross      || "");
+  setLandmark(defaultAddress.landmark  || "");
+  setCity(defaultAddress.city        || "");
+  setDistrict(defaultAddress.district  || "");
+  setState(defaultAddress.state      || "");   // ✅
+  setPincode(defaultAddress.pincode   || "");
+  setPhone(defaultAddress.phone      || "");
+}, [addresses]);
+
+const buildAddress = () => {
+  const parts = [
+    doorNo    && `${doorNo}`,
+    houseName && `${houseName}`,
+    cross     && `${cross}`,
+    landmark  && `Near ${landmark}`,
+    city      && `${city}`,
+    district  && `${district}`,
+    state     && `${state}`,           // ✅
+    pincode   && `- ${pincode}`,
+  ].filter(Boolean);
+  return parts.join(", ");
+};
+
+const validate = () => {
+  if (!doorNo.trim())   { toast.error("Please enter Door No / House Name");        return false; }
+  if (!city.trim())     { toast.error("Please enter your city");                   return false; }
+  if (!district.trim()) { toast.error("Please enter your district");               return false; }
+  if (!state.trim())    { toast.error("Please select your state");                 return false; } // ✅
+  if (!pincode.trim() || pincode.length !== 6 || isNaN(pincode)) {
+    toast.error("Please enter a valid 6-digit pincode"); return false;
+  }
+  if (!phone.trim() || phone.length < 10) {
+    toast.error("Please enter a valid 10-digit phone number"); return false;
+  }
+  if (paymentMode === "cod" && !codConfirmed) {
+    toast.error("Please confirm COD advance payment terms"); return false;
+  }
+  return true;
+};
+
 const placeOrder = async () => {
   if (!validate()) return;
 
@@ -98,7 +120,6 @@ const placeOrder = async () => {
         : Number(grandTotal);
 
     console.log("FRONTEND AMOUNT:", amount, typeof amount);
-
     // ✅ STEP 1: CHECK STOCK BEFORE PAYMENT
     await API.post("/orders/check-stock", {
       items: cart.map((i) => ({
