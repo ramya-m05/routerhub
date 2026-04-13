@@ -1,5 +1,5 @@
 const multer   = require("multer");
-const cloudinary = require("cloudinary").v2;
+const cloudinary = require("cloudinary");
 
 // ✅ Handle all export shapes across multer-storage-cloudinary versions
 const storageModule = require("multer-storage-cloudinary");
