@@ -88,21 +88,33 @@ exports.forgotPasswordSendOtp = async (req, res) => {
     const emailKey = req.body.email?.toLowerCase().trim();
 
     const user = await User.findOne({ email: emailKey });
-    if (!user)
-      return res.json({ message: "If email exists, OTP sent" });
-    const otp = makeOtp();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     resetStore.set(emailKey, {
       otp,
       expires: Date.now() + 10 * 60 * 1000,
     });
 
-    const { sendOtpEmail } = require("../services/emailService");
-    await sendOtpEmail(emailKey, otp, "passwordReset");
+    console.log("OTP GENERATED:", otp); // debug
 
-    res.json({ message: "OTP sent" });
+    const { sendOtpEmail } = require("../services/emailService");
+
+    const sent = await sendOtpEmail(emailKey, otp);
+
+    if (!sent) {
+      return res.status(500).json({ message: "Failed to send OTP email" });
+    }
+
+    res.json({ message: "OTP sent successfully" });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("OTP ERROR:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 

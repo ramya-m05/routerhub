@@ -1,44 +1,26 @@
-// services/emailService.js
-// npm install nodemailer
-// .env: EMAIL_USER=admin@routerkart.in  EMAIL_PASS=yourGmailAppPassword
-//       ADMIN_EMAIL=admin@routerkart.in  ADMIN_PHONE=919876543210
+const { Resend } = require("resend");
 
-const nodemailer = require("nodemailer");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false, // TLS, not SSL
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-/* ─── Verify SMTP ─────────────────────────── */
-transporter.verify((error, success) => {
-  if (error) {
-    console.log("SMTP ERROR:", error);
-  } else {
-    console.log("SMTP READY ✅");
-  }
-});
-
-
-/* ─── Shared email wrapper ─────────────────────────── */
-/* ─── Shared email sender ─────────────────── */
-const sendEmail = async ({ to, subject, html }) => {
+exports.sendOtpEmail = async (email, otp) => {
   try {
-    console.log("📤 Sending to:", to);
-
-    const info = await transporter.sendMail({
-      from: `"RouterKart" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
+    const response = await resend.emails.send({
+      from: "RouterKart <onboarding@resend.dev>",
+      to: email,
+      subject: "Your OTP - RouterKart",
+      html: `
+        <div style="font-family:sans-serif">
+          <h2>🔐 Password Reset OTP</h2>
+          <p>Your OTP is:</p>
+          <h1 style="letter-spacing:4px">${otp}</h1>
+          <p>This OTP is valid for 10 minutes.</p>
+        </div>
+      `,
     });
 
-    console.log("✅ SUCCESS:", info.response);
+    console.log("✅ EMAIL SENT:", response);
     return true;
+
   } catch (err) {
     console.error("❌ EMAIL ERROR:", err);
     return false;

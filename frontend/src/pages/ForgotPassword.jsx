@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import API from "../services/api";
 import toast from "react-hot-toast";
 import { useIsMobile } from "../hooks/useIsMobile";
-
+import { Resend } from 'resend';
 /* ── Steps ── */
 const STEP = {
   EMAIL: "email",    // enter email
@@ -100,6 +100,7 @@ function ForgotPassword() {
       setLoading(false);
     }
   };
+  
 
   /* ── STEP 2: Verify OTP ── */
   const handleVerifyOtp = async () => {
