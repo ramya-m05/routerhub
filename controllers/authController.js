@@ -138,19 +138,37 @@ exports.forgotPasswordVerifyOtp = async (req, res) => {
 /* RESET PASSWORD */
 exports.forgotPasswordReset = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, otp, newPassword } = req.body;
 
-    const user = await User.findOne({ email: email.toLowerCase() });
+    const emailKey = email.toLowerCase().trim();
 
-    if (!user)
-      return res.json({ message: "If email exists, OTP sent" });
-    user.password = password;
+    const record = resetStore.get(emailKey);
+
+    if (!record || record.otp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    if (Date.now() > record.otpExpires) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    const user = await User.findOne({ email: emailKey });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ✅ FIXED LINE
+    user.password = newPassword;
+
     await user.save();
 
-    resetStore.delete(email.toLowerCase());
+    resetStore.delete(emailKey);
 
     res.json({ message: "Password reset successful" });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("RESET ERROR:", err);
+    res.status(500).json({ message: "Failed to reset password" });
   }
 };
