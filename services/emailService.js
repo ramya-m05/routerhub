@@ -15,12 +15,14 @@ const sendEmail = async ({ to, subject, html }) => {
   if (!resend) return false;
   try {
     const response = await resend.emails.send({
-      from: "RouterKart <onboarding@resend.dev>",
-      to,
+      from: "RouterKart <noreply@routerkart.in>",
+      to: "sihiaira@gmail.com", // override for testing
       subject,
       html,
     });
     console.log("✅ EMAIL SENT to", to, "| id:", response?.data?.id);
+    console.log("📨 Sending email to:", to);
+    console.log("📬 RESEND RESPONSE:", response);
     return true;
   } catch (err) {
     console.error("❌ EMAIL ERROR:", err?.message || err);
