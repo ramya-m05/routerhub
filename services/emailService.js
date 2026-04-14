@@ -16,7 +16,7 @@ const sendEmail = async ({ to, subject, html }) => {
   try {
     const response = await resend.emails.send({
       from: "RouterKart <noreply@routerkart.in>",
-      to: "sihiaira@gmail.com", // override for testing
+      to,
       subject,
       html,
     });
