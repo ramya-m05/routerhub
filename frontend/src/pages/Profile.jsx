@@ -8,6 +8,7 @@ import { useIsMobile } from "../hooks/useIsMobile";
 const OTP_STEP = { IDLE: "idle", SENDING: "sending", VERIFY: "verify", VERIFYING: "verifying" };
 const ADDR_LABELS = ["Home", "Work", "Other"];
 
+
 /* ─── Address Form Modal ─────────────────────────── */
 const INDIAN_STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
@@ -215,6 +216,9 @@ function Profile() {
   const isMobile  = useIsMobile();
 
   const [user, setUser]         = useState(null);
+  // At top of Profile component
+const localuser = JSON.parse(localStorage.getItem("user")) || {};
+const isAdmin = localuser?.role === "admin" || localuser?.isAdmin === true;
   const [loading, setLoading]   = useState(true);
   const [editing, setEditing]   = useState(false);
   const [editName, setEditName] = useState("");
@@ -354,20 +358,42 @@ function Profile() {
               <p style={{ fontSize: "13px", color: "#666", fontWeight: "700", margin: 0 }}>{memberSince(user?.createdAt)}</p>
             </div>
           </div>
+          
 
-          <div style={{ background: "white", borderRadius: "12px", overflow: "hidden", border: "1px solid #ececec" }}>
-            {[{ icon: "📦", label: "My Orders", path: "/orders" }, { icon: "❤️", label: "Wishlist", path: "/wishlist" }, { icon: "🛒", label: "Cart", path: "/cart" }].map(item => (
-              <Link key={item.path} to={item.path}
-                style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", textDecoration: "none", color: "#333", fontSize: "14px", fontWeight: "600", borderBottom: "1px solid #f5f5f5" }}>
-                <span>{item.icon}</span><span style={{ flex: 1 }}>{item.label}</span><span style={{ color: "#ccc" }}>→</span>
-              </Link>
-            ))}
-            <button onClick={handleLogout} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", background: "none", border: "none", color: "#cc4444", fontSize: "14px", fontWeight: "700", cursor: "pointer", width: "100%", textAlign: "left", fontFamily: "'DM Sans', sans-serif" }}>
-              <span>🚪</span>Logout
-            </button>
-          </div>
+          
+<div style={{ background: "white", borderRadius: "12px", overflow: "hidden", border: "1px solid #ececec" }}>
+
+  {isAdmin && (
+    <div onClick={() => navigate("/admin")}
+      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 16px", borderBottom: "1px solid #f5f5f5", cursor: "pointer", background: "#FFFDF0" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <span>⚙️</span>
+        <span style={{ flex: 1, fontSize: "14px", fontWeight: "700", color: "#111" }}>Admin Dashboard</span>
+      </div>
+      <span style={{ color: "#FEE12B" }}>→</span>
+    </div>
+  )}
+
+  {[
+    { icon: "📦", label: "My Orders",  path: "/orders"   },
+    { icon: "❤️", label: "Wishlist",   path: "/wishlist" },
+    { icon: "🛒", label: "Cart",       path: "/cart"     },
+  ].map(item => (
+    <Link key={item.path} to={item.path}
+      style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", textDecoration: "none", color: "#333", fontSize: "14px", fontWeight: "600", borderBottom: "1px solid #f5f5f5" }}>
+      <span>{item.icon}</span>
+      <span style={{ flex: 1 }}>{item.label}</span>
+      <span style={{ color: "#ccc" }}>→</span>
+    </Link>
+  ))}
+
+  <button onClick={handleLogout}
+    style={{ display: "flex", alignItems: "center", gap: "12px", padding: "13px 16px", background: "none", border: "none", color: "#cc4444", fontSize: "14px", fontWeight: "700", cursor: "pointer", width: "100%", textAlign: "left", fontFamily: "'DM Sans', sans-serif" }}>
+    <span>🚪</span>Logout
+  </button>
+</div>
+
         </div>
-
         {/* MAIN */}
         <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "16px" }}>
 
