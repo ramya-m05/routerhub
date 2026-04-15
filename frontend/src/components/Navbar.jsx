@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { CartContext } from "../context/CartContext";
 import { WishlistContext } from "../context/WishlistContext";
 import { useIsMobile } from "../hooks/useIsMobile";
-
+import logo from "../assets/ROUTERKART_logo2.png";
 function Navbar({ products = [] }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -91,7 +91,7 @@ function Navbar({ products = [] }) {
           {/* LOGO */}
           <Link to="/" style={s.logo}>
             <img
-              src="/ROUTERKART_logo2.png"
+              src={logo}
               alt="RouterKart"
               style={{ height: isMobile ? "46px" : "54px", width: "auto", objectFit: "contain" }}
             />
